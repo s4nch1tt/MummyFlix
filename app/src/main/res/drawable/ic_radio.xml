@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="18dp"
+    android:height="14dp"
+    android:viewportWidth="18"
+    android:viewportHeight="14">
+    <!-- Radio body -->
+    <path
+        android:strokeColor="#ffffff"
+        android:strokeWidth="2"
+        android:pathData="M1,1h16v12h-16z" />
+    <!-- Radio wave -->
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M12,7a3,3 0 0 1 0,6" />
+</vector>

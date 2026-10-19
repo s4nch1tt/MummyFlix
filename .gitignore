@@ -1,0 +1,63 @@
+# Gradle
+.gradle/
+build/
+*/build/
+*/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Local configuration
+local.properties
+gradle.properties
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+*.swp
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# APKs
+*.apk
+*.ap_
+*.aab
+
+# JKS / Keystores
+*.jks
+*.keystore
+
+# Coverage
+coverage/
+*.ec
+
+# Lint
+lint-results.html
+lint-results.xml
+
+# Test reports
+test-results/
+
+# Kotlin
+*.kt.idea
+
+# Compose
+compose-build/
+
+# Signing
+signing.properties
+key.properties
+
+# Release
+release/
+dist/
+
+# Misc
+*.log
+*.tmp
+*.temp
