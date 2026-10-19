@@ -32,7 +32,7 @@
     <string name="use_arrows_to_move">Use ▲ ▼ ◄ ► buttons to move Snake</string>
     <string name="press_ok_to_toggle">Press OK to toggle Favorite, Lock or Delete channel</string>
     <string name="tap_or_press_to_switch">Tap or press ◄► / OK to switch language</string>
-    <string name="use_ok_to_adjust">Use OK or ◄► to adjust video & system settings</string>
+    <string name="use_ok_to_adjust">Use OK or ◄► to adjust video &amp; system settings</string>
     <string name="developed_by_sanchit">Developed by Sanchit</string>
     <string name="version">Version</string>
     <string name="satellite">Satellite</string>
