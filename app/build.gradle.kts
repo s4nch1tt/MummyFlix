@@ -66,6 +66,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
+    // Material Components - provides Material theme resources
+    implementation("com.google.android.material:material:1.12.0")
+
+    // Leanback - provides Theme.Leanback for Android TV
+    implementation("androidx.leanback:leanback:1.2.0")
+
     // Compose for TV
     implementation("androidx.tv:tv-material:1.1.0")
     implementation("androidx.tv:tv-foundation:1.0.0")
