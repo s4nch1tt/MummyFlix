@@ -108,7 +108,7 @@ object MummyFlixPreferences {
     val favChannels: Flowable<Set<String>> = getDataStore()
         .data()
         .map { it[FAV_CHANNELS] ?: emptySet() }
-        .distUntilChanged()
+        .distinctUntilChanged()
 
     suspend fun toggleFavChannel(channelUrl: String) {
         getDataStore().updateDataAsync { prefs ->
@@ -126,7 +126,7 @@ object MummyFlixPreferences {
     val lockedChannels: Flowable<Set<String>> = getDataStore()
         .data()
         .map { it[LOCKED_CHANNELS] ?: emptySet() }
-        .distUntilChanged()
+        .distinctUntilChanged()
 
     suspend fun toggleLockedChannel(channelUrl: String) {
         getDataStore().updateDataAsync { prefs ->
