@@ -53,6 +53,10 @@ jobs:
           ndk-version: r27b
           build-tools-version: '34.0.0'
           cmdline-tools-version: 'latest'
+          packages: 'platforms;android-34 build-tools;34.0.0 platform-tools'
+
+      - name: Accept Android Licenses
+        run: yes | sdkmanager --licenses
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
