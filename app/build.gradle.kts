@@ -66,9 +66,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
-    // Compose for TV
-    implementation("androidx.tv:tv-material:1.3.0")
-    implementation("androidx.tv:tv-foundation:1.3.0")
+    // Compose for TV - correct versions
+    implementation("androidx.tv:tv-material:1.1.0")
+    implementation("androidx.tv:tv-foundation:1.0.0")
     implementation("androidx.compose.material3:material3:1.3.0")
     implementation("androidx.compose.ui:ui:1.7.0")
     implementation("androidx.compose.ui:ui-graphics:1.7.0")
