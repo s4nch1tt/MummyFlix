@@ -267,7 +267,7 @@ fun MainMenuOSD(viewModel: MummyFlixViewModel) {
                         ) {
                             KeyBadge(label = "MENU")
                             Text(
-                                text = stringResource(R.string.return),
+                                text = stringResource(R.string.return_action),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = colorResource(R.color.text_dark_blue)
