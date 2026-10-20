@@ -1,6 +1,7 @@
 package com.mummyflix.preferences
 
 import android.content.Context
+import androidx.datastore.preferences.Preferences
 import androidx.datastore.preferences.PreferencesKeys
 import androidx.datastore.preferences.edit
 import androidx.datastore.preferences.preferencesDataStore
