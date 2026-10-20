@@ -307,6 +307,16 @@ class MummyFlixViewModel(
         }
     }
 
+    /** Called by the touch/click UI; D-pad navigation uses [moveSelection]. */
+    fun selectMenuItem(index: Int) {
+        _menuIndex.value = index.coerceIn(0, MENU_ITEMS.lastIndex)
+    }
+
+    fun selectSubMenuOption(index: Int) {
+        val size = currentSubMenuOptions().size
+        if (size > 0) _subMenuIndex.value = index.coerceIn(0, size - 1)
+    }
+
     private fun openSelectedMenuOption(option: String) {
         when (option) {
             "TV List" -> switchList(radio = false)

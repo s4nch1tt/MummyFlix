@@ -60,6 +60,8 @@ class ChannelRepository {
                     ?: ""
             )
         }
-        return (named + matched).distinctBy { it.url }
+        return (named + matched).distinctBy {
+            if (it.url.isBlank()) "name:${it.name}" else it.url
+        }
     }
 }

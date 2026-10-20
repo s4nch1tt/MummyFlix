@@ -180,7 +180,7 @@ private fun ScanColumn(
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
             val first = (scanned - 5).coerceAtLeast(1)
-            (first..scanned).takeLast(6).forEach { number ->
+            (first..scanned).toList().takeLast(6).forEach { number ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically

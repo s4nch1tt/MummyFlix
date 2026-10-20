@@ -81,7 +81,7 @@ fun MainMenuOSD(viewModel: MummyFlixViewModel) {
                                 if (active) Color.White else colorResource(R.color.bg_blue_3),
                                 RoundedCornerShape(3.dp)
                             )
-                            .clickable { viewModel.menuIndex.value = index },
+                            .clickable { viewModel.selectMenuItem(index) },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(

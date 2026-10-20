@@ -86,7 +86,7 @@ fun SubMenuOSD(viewModel: MummyFlixViewModel) {
                                     if (active) Color.White else colorResource(R.color.bg_blue_3),
                                     RoundedCornerShape(3.dp)
                                 )
-                                .clickable { viewModel.subMenuIndex.value = index },
+                                .clickable { viewModel.selectSubMenuOption(index) },
                             contentAlignment = Alignment.CenterStart
                         ) {
                             Text(
