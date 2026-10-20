@@ -1,18 +1,17 @@
 package com.mummyflix.viewmodel
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mummyflix.model.*
 import com.mummyflix.preferences.MummyFlixPreferences
 import com.mummyflix.repository.ChannelRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class MummyFlixViewModel(
@@ -20,7 +19,8 @@ class MummyFlixViewModel(
     private val preferences: MummyFlixPreferences
 ) : ViewModel() {
 
-    // Channel data
+    // ------------------------------------------------------------------ data
+
     private val _masterTvChannels = mutableStateOf<List<Channel>>(emptyList())
     val masterTvChannels: State<List<Channel>> = _masterTvChannels
 
@@ -36,123 +36,147 @@ class MummyFlixViewModel(
     private val _activeList = mutableStateOf<List<Channel>>(emptyList())
     val activeList: State<List<Channel>> = _activeList
 
-    // UI State
-    private val _viewState = mutableStateOf<ViewState>(ViewState.LIST)
+    private val _isLoading = mutableStateOf(true)
+    val isLoading: State<Boolean> = _isLoading
+
+    private val _loadError = mutableStateOf<String?>(null)
+    val loadError: State<String?> = _loadError
+
+    // ------------------------------------------------------------- UI state
+
+    private val _viewState = mutableStateOf(ViewState.LIST)
     val viewState: State<ViewState> = _viewState
 
-    private val _isRadioMode = mutableStateOf<Boolean>(false)
+    private val _isRadioMode = mutableStateOf(false)
     val isRadioMode: State<Boolean> = _isRadioMode
 
-    private val _currentIndex = mutableStateOf<Int>(0)
+    private val _currentIndex = mutableStateOf(0)
     val currentIndex: State<Int> = _currentIndex
 
-    private val _playingIndex = mutableStateOf<Int>(-1)
+    private val _playingIndex = mutableStateOf(-1)
     val playingIndex: State<Int> = _playingIndex
 
-    private val _menuIndex = mutableStateOf<Int>(0)
+    private val _menuIndex = mutableStateOf(0)
     val menuIndex: State<Int> = _menuIndex
 
-    private val _subMenuIndex = mutableStateOf<Int>(0)
+    private val _subMenuIndex = mutableStateOf(0)
     val subMenuIndex: State<Int> = _subMenuIndex
 
     private val _activeSubMenu = mutableStateOf<SubMenuType?>(null)
     val activeSubMenu: State<SubMenuType?> = _activeSubMenu
 
-    private val _listScrollY = mutableStateOf<Float>(0f)
-    val listScrollY: State<Float> = _listScrollY
-
-    private val _scanProgress = mutableStateOf<ScanProgress>(ScanProgress())
+    private val _scanProgress = mutableStateOf(ScanProgress())
     val scanProgress: State<ScanProgress> = _scanProgress
 
-    private val _snakeGameState = mutableStateOf<SnakeGameState>(SnakeGameState())
+    private val _snakeGameState = mutableStateOf(SnakeGameState())
     val snakeGameState: State<SnakeGameState> = _snakeGameState
 
-    private val _numericInput = mutableStateOf<NumericInputState>(NumericInputState())
+    private val _numericInput = mutableStateOf(NumericInputState())
     val numericInput: State<NumericInputState> = _numericInput
 
-    private val _bannerState = mutableStateOf<BannerState>(BannerState())
+    private val _bannerState = mutableStateOf(BannerState())
     val bannerState: State<BannerState> = _bannerState
 
-    private val _isVideoPlaying = mutableStateOf<Boolean>(false)
+    private val _isVideoPlaying = mutableStateOf(false)
     val isVideoPlaying: State<Boolean> = _isVideoPlaying
 
-    private val _showNoSignal = mutableStateOf<Boolean>(false)
+    private val _showNoSignal = mutableStateOf(false)
     val showNoSignal: State<Boolean> = _showNoSignal
 
-    private val _videoUrl = mutableStateOf<String>("")
+    private val _videoUrl = mutableStateOf("")
     val videoUrl: State<String> = _videoUrl
 
-    // Settings from preferences
-    private val _appSettings = mutableStateOf<AppSettings>(AppSettings())
+    private val _appSettings = mutableStateOf(AppSettings())
     val appSettings: State<AppSettings> = _appSettings
 
-    // Load initial data
+    private var bannerJob: Job? = null
+    private var numericJob: Job? = null
+    private var snakeJob: Job? = null
+    private var scanJob: Job? = null
+
     init {
         loadPreferences()
         loadPlaylist()
     }
 
+    // ------------------------------------------------------------ bootstrap
+
     private fun loadPreferences() {
         viewModelScope.launch {
-            preferences.menuLang.firstOrNull().let { if (it != null) _appSettings.value = _appSettings.value.copy(menuLang = it) }
-            preferences.audioLang.firstOrNull().let { if (it != null) _appSettings.value = _appSettings.value.copy(audioLang = it) }
-            preferences.tvSystem.firstOrNull().let { if (it != null) _appSettings.value = _appSettings.value.copy(tvSystem = it) }
-            preferences.aspectRatio.firstOrNull().let { if (it != null) _appSettings.value = _appSettings.value.copy(aspectRatio = it) }
-            preferences.osdTimeout.firstOrNull().let { if (it != null) _appSettings.value = _appSettings.value.copy(osdTimeout = it) }
-            preferences.lnbFreq.firstOrNull().let { if (it != null) _appSettings.value = _appSettings.value.copy(lnbFreq = it) }
-            preferences.transponder.firstOrNull().let { if (it != null) _appSettings.value = _appSettings.value.copy(transponder = it) }
-            preferences.isRadioMode.firstOrNull().let { if (it != null) _isRadioMode.value = it }
-            preferences.lastChannelIndex.firstOrNull().let { if (it != null) _currentIndex.value = it }
+            val settings = AppSettings(
+                menuLang = preferences.menuLang.first(),
+                audioLang = preferences.audioLang.first(),
+                tvSystem = preferences.tvSystem.first(),
+                aspectRatio = preferences.aspectRatio.first(),
+                osdTimeout = preferences.osdTimeout.first(),
+                lnbFreq = preferences.lnbFreq.first(),
+                transponder = preferences.transponder.first()
+            )
+            _appSettings.value = settings
+            _isRadioMode.value = preferences.isRadioMode.first()
+            _currentIndex.value = preferences.lastChannelIndex.first()
         }
     }
 
     private fun loadPlaylist() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = repository.loadPlaylist()
-            result.onSuccess { channels ->
-                _masterTvChannels.value = channels
-                val matchedRadio = repository.filterRadioChannels(channels)
-                val defaultRadioNames = repository.getDefaultRadioNames()
+        viewModelScope.launch {
+            _isLoading.value = true
+            repository.loadPlaylist()
+                .onSuccess { channels ->
+                    val favs = preferences.favChannels.first()
+                    val locked = preferences.lockedChannels.first()
+                    val decorated = channels.map {
+                        it.copy(
+                            fav = favs.contains(it.url),
+                            locked = locked.contains(it.url)
+                        )
+                    }
+                    val radio = repository.buildRadioChannels(decorated)
 
-                val masterRadio = defaultRadioNames.mapIndexed { idx, name ->
-                    Channel(
-                        name = name,
-                        url = matchedRadio.getOrNull(idx % matchedRadio.size)?.url
-                            ?: channels.getOrNull(idx)?.url
-                            ?: "",
-                        fav = false,
-                        locked = false
-                    )
-                } + matchedRadio.map { it.copy() }
+                    _masterTvChannels.value = decorated
+                    _masterRadioChannels.value = radio
+                    _allChannels.value = decorated
+                    _radioChannels.value = radio
 
-                _masterRadioChannels.value = masterRadio
-                _allChannels.value = channels.toMutableList()
-                _radioChannels.value = masterRadio.toMutableList()
-                _activeList.value = if (_isRadioMode.value) masterRadio else channels
+                    _activeList.value = if (_isRadioMode.value) radio else decorated
+                    _isLoading.value = false
+                    _loadError.value = null
 
-                if (_activeList.value.isNotEmpty()) {
-                    _currentIndex.value = 0
-                    playChannel(0)
-                } else {
+                    if (_activeList.value.isNotEmpty()) {
+                        val start = _currentIndex.value.coerceIn(0, _activeList.value.lastIndex)
+                        playChannel(start)
+                    } else {
+                        _showNoSignal.value = true
+                    }
+                }
+                .onFailure { error ->
+                    _isLoading.value = false
+                    _loadError.value = error.message ?: "Playlist unavailable"
                     _showNoSignal.value = true
                 }
-            }.onFailure { e ->
-                _showNoSignal.value = true
-            }
         }
     }
 
-    // Channel playback
+    fun retryLoading() {
+        if (_isLoading.value) return
+        loadPlaylist()
+    }
+
+    // ------------------------------------------------------------- playback
+
     fun playChannel(index: Int) {
         val list = _activeList.value
-        if (index < 0 || index >= list.size) return
+        if (index !in list.indices) return
 
         _playingIndex.value = index
         _currentIndex.value = index
         _videoUrl.value = list[index].url
         _isVideoPlaying.value = false
-        _showNoSignal.value = false
-        preferences.setLastChannelIndex(index)
+        _showNoSignal.value = list[index].url.isBlank()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            preferences.setLastChannelIndex(index)
+        }
     }
 
     fun onVideoPlaying() {
@@ -165,40 +189,40 @@ class MummyFlixViewModel(
         _showNoSignal.value = true
     }
 
-    // Navigation
+    // ------------------------------------------------------------ navigation
+
     fun moveSelection(delta: Int) {
         when (_viewState.value) {
             ViewState.LIST -> {
                 val list = _activeList.value
                 if (list.isEmpty()) return
-                val nextIdx = (_currentIndex.value + delta + list.size) % list.size
-                updateActiveChannel(nextIdx, shouldScroll = true)
-                playChannel(nextIdx)
+                val next = (_currentIndex.value + delta + list.size) % list.size
+                playChannel(next)
             }
+
             ViewState.MENU -> {
-                val items = MENU_ITEMS
-                _menuIndex.value = (_menuIndex.value + delta + items.size) % items.size
+                _menuIndex.value = (_menuIndex.value + delta + MENU_ITEMS.size) % MENU_ITEMS.size
             }
-            ViewState.SUBMENU -> {
-                _activeSubMenu.value?.let { subMenu ->
-                    when (subMenu) {
-                        SubMenuType.GAME -> {
-                            _snakeGameState.value = _snakeGameState.value.copy(direction = Point(0, delta))
-                        }
-                        else -> {
-                            val maxOpt = (subMenu.options.size - 1).coerceAtMost(4)
-                            _subMenuIndex.value = (_subMenuIndex.value + delta).coerceIn(0, maxOpt)
-                        }
+
+            ViewState.SUBMENU -> when (_activeSubMenu.value) {
+                SubMenuType.GAME -> changeSnakeDirection(if (delta < 0) Point(0, -1) else Point(0, 1))
+                else -> {
+                    val count = currentSubMenuOptions().size
+                    if (count > 0) {
+                        _subMenuIndex.value = (_subMenuIndex.value + delta + count) % count
                     }
                 }
             }
+
             ViewState.FULLSCREEN -> {
                 val list = _activeList.value
                 if (list.isEmpty()) return
-                _currentIndex.value = (_currentIndex.value + delta + list.size) % list.size
-                playChannel(_currentIndex.value)
+                val next = (_currentIndex.value + delta + list.size) % list.size
+                playChannel(next)
                 showBanner()
             }
+
+            ViewState.AUTOSCAN -> Unit
         }
     }
 
@@ -206,44 +230,33 @@ class MummyFlixViewModel(
         when (_viewState.value) {
             ViewState.LIST -> {
                 val list = _activeList.value
-                if (list.isEmpty()) return
-                var nextIdx = _currentIndex.value + dir * 10
-                if (nextIdx >= list.size) nextIdx = 0
-                if (nextIdx < 0) nextIdx = maxOf(0, list.size - 10)
-                updateActiveChannel(nextIdx, shouldScroll = true)
-                playChannel(nextIdx)
-            }
-            ViewState.SUBMENU -> {
-                _activeSubMenu.value?.let { subMenu ->
-                    when (subMenu) {
-                        SubMenuType.GAME -> {
-                            _snakeGameState.value = _snakeGameState.value.copy(direction = Point(dir, 0))
-                        }
-                        else -> handleOkKey()
-                    }
+                if (list.isNotEmpty()) {
+                    playChannel((_currentIndex.value + dir * PAGE_SIZE).coerceIn(0, list.lastIndex))
                 }
             }
+
+            ViewState.SUBMENU -> when (_activeSubMenu.value) {
+                SubMenuType.GAME -> changeSnakeDirection(if (dir < 0) Point(-1, 0) else Point(1, 0))
+                SubMenuType.LANGUAGE, SubMenuType.SYSTEM_SETTING -> handleOkKey()
+                else -> Unit
+            }
+
+            ViewState.AUTOSCAN -> Unit
+            else -> Unit
         }
     }
 
     fun handleOkKey() {
         when (_viewState.value) {
             ViewState.LIST -> {
-                if (_playingIndex.value != _currentIndex.value) {
-                    playChannel(_currentIndex.value)
-                } else {
-                    enterFullscreen()
-                }
+                if (_playingIndex.value != _currentIndex.value) playChannel(_currentIndex.value)
+                else enterFullscreen()
             }
-            ViewState.MENU -> {
-                openSelectedMenuOption(MENU_ITEMS[_menuIndex.value])
-            }
-            ViewState.SUBMENU -> {
-                handleSubMenuAction()
-            }
-            ViewState.FULLSCREEN -> {
-                exitFullscreen()
-            }
+
+            ViewState.MENU -> openSelectedMenuOption(MENU_ITEMS[_menuIndex.value])
+            ViewState.SUBMENU -> handleSubMenuAction()
+            ViewState.FULLSCREEN -> exitFullscreen()
+            ViewState.AUTOSCAN -> finalizeAutoScan()
         }
     }
 
@@ -251,152 +264,263 @@ class MummyFlixViewModel(
         when (_viewState.value) {
             ViewState.AUTOSCAN -> finalizeAutoScan()
             ViewState.SUBMENU -> {
+                stopSnakeGame()
                 _viewState.value = ViewState.MENU
                 _activeSubMenu.value = null
             }
+
             ViewState.LIST -> {
                 _viewState.value = ViewState.MENU
-                _menuIndex.value = 2 // Program Setup
+                _menuIndex.value = 2
             }
-            ViewState.MENU -> {
-                _viewState.value = ViewState.LIST
-            }
+
+            ViewState.MENU -> _viewState.value = ViewState.LIST
             ViewState.FULLSCREEN -> {
-                _viewState.value = ViewState.MENU
+                _viewState.value = ViewState.LIST
                 _bannerState.value = _bannerState.value.copy(isVisible = false)
             }
         }
     }
 
     fun handleNumericKey(digit: String) {
-        if (_viewState.value !in setOf(ViewState.LIST, ViewState.FULLSCREEN)) return
+        if (_viewState.value != ViewState.LIST && _viewState.value != ViewState.FULLSCREEN) return
 
-        val buffer = _numericInput.value.buffer + digit
-        val newBuffer = if (buffer.length >= 3) digit else buffer
-        _numericInput.value = NumericInputState(newBuffer, true)
+        val current = _numericInput.value.buffer
+        val next = if (current.length >= 3) digit else current + digit
+        _numericInput.value = NumericInputState(next, true)
 
-        // Auto-submit after 1.4 seconds
-        // In a real app, you'd use a coroutine with delay
+        numericJob?.cancel()
+        numericJob = viewModelScope.launch {
+            delay(1400)
+            submitNumericInput()
+        }
     }
 
     fun submitNumericInput() {
+        numericJob?.cancel()
         val buffer = _numericInput.value.buffer
         _numericInput.value = NumericInputState("", false)
-        val targetCh = buffer.toIntOrNull()?.minus(1)
-        targetCh?.let {
-            val list = _activeList.value
-            if (it in list.indices) {
-                updateActiveChannel(it, true)
-                playChannel(it)
-                if (_viewState.value == ViewState.FULLSCREEN) showBanner()
+        val target = buffer.toIntOrNull()?.minus(1) ?: return
+        if (target in _activeList.value.indices) {
+            playChannel(target)
+            if (_viewState.value == ViewState.FULLSCREEN) showBanner()
+        }
+    }
+
+    private fun openSelectedMenuOption(option: String) {
+        when (option) {
+            "TV List" -> switchList(radio = false)
+            "Radio List" -> switchList(radio = true)
+            "Cancel" -> enterFullscreen()
+            else -> {
+                val subMenu = SubMenuType.entries.firstOrNull { it.title == option }
+                if (subMenu != null) {
+                    _activeSubMenu.value = subMenu
+                    _subMenuIndex.value = 0
+                    _viewState.value = ViewState.SUBMENU
+                    if (subMenu == SubMenuType.GAME) startSnakeGame() else stopSnakeGame()
+                }
             }
         }
     }
 
-    private fun updateActiveChannel(newIndex: Int, shouldScroll: Boolean) {
-        _currentIndex.value = newIndex
-        // Scroll handling would be done in UI
+    private fun switchList(radio: Boolean) {
+        stopSnakeGame()
+        _isRadioMode.value = radio
+        _activeList.value = if (radio) _radioChannels.value else _allChannels.value
+        _currentIndex.value = 0
+        _viewState.value = ViewState.LIST
+        if (_activeList.value.isNotEmpty()) playChannel(0)
+        viewModelScope.launch { preferences.setRadioMode(radio) }
     }
 
-    private fun openSelectedMenuOption(optionName: String) {
-        when (optionName) {
-            "TV List" -> {
-                _isRadioMode.value = false
-                _activeList.value = _allChannels.value
-                _currentIndex.value = minOf(_currentIndex.value, maxOf(0, _allChannels.value.size - 1))
-                _viewState.value = ViewState.LIST
-                playChannel(_currentIndex.value)
-                preferences.setRadioMode(false)
-            }
-            "Radio List" -> {
-                _isRadioMode.value = true
-                _activeList.value = _radioChannels.value
-                _currentIndex.value = 0
-                _listScrollY.value = 0f
-                _viewState.value = ViewState.LIST
-                playChannel(0)
-                preferences.setRadioMode(true)
-            }
-            "Cancel" -> enterFullscreen()
-            else -> {
-                val subMenu = SubMenuType.values().find { it.title == optionName }
-                subMenu?.let {
-                    _activeSubMenu.value = it
-                    _subMenuIndex.value = 0
-                    _viewState.value = ViewState.SUBMENU
-                }
+    // --------------------------------------------------------------- submenu
+
+    /** Option labels with live setting values substituted in. */
+    fun currentSubMenuOptions(): List<String> {
+        val subMenu = _activeSubMenu.value ?: return emptyList()
+        val settings = _appSettings.value
+        return subMenu.options.map { option ->
+            when (option) {
+                "LNB Frequency" -> "$option: ${settings.lnbFreq}"
+                "Transponder Frequency" -> "$option: ${settings.transponder}"
+                "Menu Language" -> "$option: < ${settings.menuLang} >"
+                "Audio Language" -> "$option: < ${settings.audioLang} >"
+                "Subtitle" -> "$option: < OFF >"
+                "TV System" -> "$option: < ${settings.tvSystem} >"
+                "Screen Ratio" -> "$option: < ${settings.aspectRatio} >"
+                "OSD Timeout" -> "$option: < ${settings.osdTimeout} >"
+                else -> option
             }
         }
     }
 
     private fun handleSubMenuAction() {
-        val ch = _activeList.value.getOrNull(_currentIndex.value)
-        _activeSubMenu.value?.let { subMenu ->
-            when (subMenu) {
-                SubMenuType.PROGRAM_SETUP -> {
-                    when (_subMenuIndex.value) {
-                        0 -> { _viewState.value = ViewState.AUTOSCAN; startAutoScan() }
-                        4 -> handleMenuKey()
-                    }
-                }
-                SubMenuType.PROGRAM_EDIT -> {
-                    ch?.let { channel ->
-                        when (_subMenuIndex.value) {
-                            1 -> channel.fav = !channel.fav
-                            2 -> channel.locked = !channel.locked
-                            3 -> {
-                                if (_activeList.value.size > 1) {
-                                    val list = _activeList.value.toMutableList()
-                                    list.removeAt(_currentIndex.value)
-                                    _activeList.value = list
-                                    _currentIndex.value = maxOf(0, _currentIndex.value - 1)
-                                    _masterTvChannels.value.toMutableList().removeAll { it.url == channel.url }
-                                    _masterRadioChannels.value.toMutableList().removeAll { it.url == channel.url }
-                                }
-                            }
-                            4 -> { handleMenuKey(); return }
-                        }
-                        // Re-render submenu
-                    }
-                }
-                SubMenuType.LANGUAGE -> {
-                    when (_subMenuIndex.value) {
-                        0 -> {
-                            val newLang = if (_appSettings.value.menuLang == "English") "Hindi" else "English"
-                            _appSettings.value = _appSettings.value.copy(menuLang = newLang)
-                            preferences.setMenuLang(newLang)
-                        }
-                        1 -> {
-                            val newLang = if (_appSettings.value.audioLang == "Hindi") "English" else "Hindi"
-                            _appSettings.value = _appSettings.value.copy(audioLang = newLang)
-                            preferences.setAudioLang(newLang)
-                        }
-                        3 -> { handleMenuKey(); return }
-                    }
-                }
-                SubMenuType.SYSTEM_SETTING -> {
-                    when (_subMenuIndex.value) {
-                        0 -> {
-                            val newSystem = if (_appSettings.value.tvSystem == "PAL") "NTSC" else "PAL"
-                            _appSettings.value = _appSettings.value.copy(tvSystem = newSystem)
-                            preferences.setTvSystem(newSystem)
-                        }
-                        1 -> {
-                            val isFull = _appSettings.value.aspectRatio.startsWith("Full")
-                            val newRatio = if (isFull) "Fit (4:3)" else "Full (16:9)"
-                            _appSettings.value = _appSettings.value.copy(aspectRatio = newRatio)
-                            preferences.setAspectRatio(newRatio)
-                        }
-                        3 -> {
-                            _appSettings.value = AppSettings()
-                            preferences.setTvSystem("PAL")
-                            preferences.setAspectRatio("Full (16:9)")
-                        }
-                        4 -> { handleMenuKey(); return }
-                    }
-                }
-                else -> handleMenuKey()
+        val subMenu = _activeSubMenu.value ?: return
+        val index = _subMenuIndex.value
+
+        when (subMenu) {
+            SubMenuType.PROGRAM_SETUP -> when (index) {
+                0 -> startAutoScan()
+                1 -> switchList(radio = false)
+                2 -> cycleLnbFrequency()
+                3 -> cycleTransponder()
+                4 -> handleMenuKey()
+                else -> Unit
             }
+
+            SubMenuType.PROGRAM_EDIT -> when (index) {
+                0 -> toggleFavorite()
+                1 -> toggleLock()
+                2 -> deleteCurrentChannel()
+                3 -> handleMenuKey()
+                else -> Unit
+            }
+
+            SubMenuType.LANGUAGE -> when (index) {
+                0 -> updateSetting(menuLang = if (_appSettings.value.menuLang == "English") "Hindi" else "English")
+                1 -> updateSetting(audioLang = if (_appSettings.value.audioLang == "Hindi") "English" else "Hindi")
+                3 -> handleMenuKey()
+                else -> Unit
+            }
+
+            SubMenuType.SYSTEM_SETTING -> when (index) {
+                0 -> updateSetting(tvSystem = if (_appSettings.value.tvSystem == "PAL") "NTSC" else "PAL")
+                1 -> updateSetting(
+                    aspectRatio = if (_appSettings.value.aspectRatio.startsWith("Full")) "Fit (4:3)"
+                    else "Full (16:9)"
+                )
+
+                2 -> updateSetting(
+                    osdTimeout = when (_appSettings.value.osdTimeout) {
+                        "3 Sec" -> "5 Sec"
+                        "5 Sec" -> "10 Sec"
+                        else -> "3 Sec"
+                    }
+                )
+
+                3 -> restoreDefaults()
+                4 -> handleMenuKey()
+                else -> Unit
+            }
+
+            SubMenuType.GAME -> startSnakeGame()
+            SubMenuType.PROGRAM_INFO, SubMenuType.SYSTEM_INFO -> handleMenuKey()
+        }
+    }
+
+    private fun updateSetting(
+        menuLang: String? = null,
+        audioLang: String? = null,
+        tvSystem: String? = null,
+        aspectRatio: String? = null,
+        osdTimeout: String? = null
+    ) {
+        val current = _appSettings.value
+        _appSettings.value = current.copy(
+            menuLang = menuLang ?: current.menuLang,
+            audioLang = audioLang ?: current.audioLang,
+            tvSystem = tvSystem ?: current.tvSystem,
+            aspectRatio = aspectRatio ?: current.aspectRatio,
+            osdTimeout = osdTimeout ?: current.osdTimeout
+        )
+        viewModelScope.launch {
+            menuLang?.let { preferences.setMenuLang(it) }
+            audioLang?.let { preferences.setAudioLang(it) }
+            tvSystem?.let { preferences.setTvSystem(it) }
+            aspectRatio?.let { preferences.setAspectRatio(it) }
+            osdTimeout?.let { preferences.setOsdTimeout(it) }
+        }
+    }
+
+    private fun cycleLnbFrequency() {
+        val values = listOf("09750", "10600", "10750", "11300")
+        val next = values[(values.indexOf(_appSettings.value.lnbFreq) + 1).coerceAtLeast(0) % values.size]
+        _appSettings.value = _appSettings.value.copy(lnbFreq = next)
+        viewModelScope.launch { preferences.setLnbFreq(next) }
+    }
+
+    private fun cycleTransponder() {
+        val values = listOf("10990", "11090", "11170", "11470", "11510")
+        val next = values[(values.indexOf(_appSettings.value.transponder) + 1).coerceAtLeast(0) % values.size]
+        _appSettings.value = _appSettings.value.copy(transponder = next)
+        viewModelScope.launch { preferences.setTransponder(next) }
+    }
+
+    private fun restoreDefaults() {
+        _appSettings.value = AppSettings()
+        viewModelScope.launch {
+            preferences.resetToDefaults()
+            preferences.setRadioMode(false)
+        }
+        _isRadioMode.value = false
+        _activeList.value = _allChannels.value
+        _currentIndex.value = 0
+    }
+
+    private fun toggleFavorite() {
+        val channel = _activeList.value.getOrNull(_currentIndex.value) ?: return
+        val updated = channel.copy(fav = !channel.fav)
+        replaceChannel(channel, updated)
+        viewModelScope.launch { preferences.toggleFavChannel(channel.url) }
+    }
+
+    private fun toggleLock() {
+        val channel = _activeList.value.getOrNull(_currentIndex.value) ?: return
+        val updated = channel.copy(locked = !channel.locked)
+        replaceChannel(channel, updated)
+        viewModelScope.launch { preferences.toggleLockedChannel(channel.url) }
+    }
+
+    private fun replaceChannel(old: Channel, updated: Channel) {
+        fun List<Channel>.replaced() = map { if (it.url == old.url) updated else it }
+        _activeList.value = _activeList.value.replaced()
+        _allChannels.value = _allChannels.value.replaced()
+        _masterTvChannels.value = _masterTvChannels.value.replaced()
+        _radioChannels.value = _radioChannels.value.replaced()
+        _masterRadioChannels.value = _masterRadioChannels.value.replaced()
+    }
+
+    private fun deleteCurrentChannel() {
+        val list = _activeList.value
+        val index = _currentIndex.value
+        if (index !in list.indices) return
+
+        val target = list[index]
+        val filtered = list.filterNot { it.url == target.url }
+        _activeList.value = filtered
+        _allChannels.value = _allChannels.value.filterNot { it.url == target.url }
+        _masterTvChannels.value = _masterTvChannels.value.filterNot { it.url == target.url }
+        _radioChannels.value = _radioChannels.value.filterNot { it.url == target.url }
+        _masterRadioChannels.value = _masterRadioChannels.value.filterNot { it.url == target.url }
+
+        if (filtered.isEmpty()) {
+            _playingIndex.value = -1
+            _videoUrl.value = ""
+            _showNoSignal.value = true
+            _subMenuIndex.value = 0
+        } else {
+            playChannel(index.coerceIn(0, filtered.lastIndex))
+        }
+    }
+
+    // --------------------------------------------------------------- banner
+
+    fun showBanner() {
+        val list = _activeList.value
+        val index = _currentIndex.value
+        if (index !in list.indices) return
+
+        _bannerState.value = BannerState(
+            isVisible = true,
+            channelName = "${index + 1}. ${list[index].displayName}",
+            channelType = if (_isRadioMode.value) "Radio Channel" else "TV Channel"
+        )
+
+        bannerJob?.cancel()
+        bannerJob = viewModelScope.launch {
+            delay(3000)
+            _bannerState.value = _bannerState.value.copy(isVisible = false)
         }
     }
 
@@ -410,109 +534,124 @@ class MummyFlixViewModel(
         _bannerState.value = _bannerState.value.copy(isVisible = false)
     }
 
-    fun showBanner() {
-        val list = _activeList.value
-        val idx = _currentIndex.value
-        if (idx in list.indices) {
-            _bannerState.value = BannerState(
-                isVisible = true,
-                channelName = "${idx + 1}. ${list[idx].name}",
-                channelType = if (_isRadioMode.value) "Radio Channel" else "TV Channel"
-            )
-        }
-    }
+    // ------------------------------------------------------------- auto scan
 
-    // Auto Scan
     private fun startAutoScan() {
+        scanJob?.cancel()
+        _viewState.value = ViewState.AUTOSCAN
         _scanProgress.value = ScanProgress()
-        val transFreqs = listOf("10990", "11090", "11170", "11470", "11510", "11550", "12020")
-        val symRates = listOf("28490", "29500", "30000")
 
-        _allChannels.value = emptyList()
-        _radioChannels.value = emptyList()
+        val transponders = listOf("10990", "11090", "11170", "11470", "11510", "11550", "12020")
+        val symbolRates = listOf("28490", "29500", "30000")
+        val tvTotal = _masterTvChannels.value.size
+        val radioTotal = _masterRadioChannels.value.size
 
-        viewModelScope.launch {
-            for (progress in 1..100) {
-                _scanProgress.value = _scanProgress.value.copy(
+        scanJob = viewModelScope.launch {
+            for (progress in 0..100) {
+                _scanProgress.value = ScanProgress(
                     progress = progress,
-                    tpNum = maxOf(1, (progress / 4).coerceAtLeast(1)),
-                    transFreq = transFreqs[((progress / 4) % transFreqs.size)],
-                    symbolRate = symRates[((progress / 4) % symRates.size)],
+                    tpNum = (progress / 4).coerceAtLeast(1),
+                    transFreq = transponders[(progress / 4) % transponders.size],
+                    symbolRate = symbolRates[(progress / 4) % symbolRates.size],
                     polarity = if ((progress / 4) % 2 == 0) "V" else "H",
-                    tvScanned = (progress * _masterTvChannels.value.size / 100),
-                    radioScanned = (progress * _masterRadioChannels.value.size / 100)
+                    tvScanned = tvTotal * progress / 100,
+                    radioScanned = radioTotal * progress / 100
                 )
-                // Simulate scanning delay
-                kotlinx.coroutines.delay(150)
+                delay(60)
             }
+            delay(400)
             finalizeAutoScan()
         }
     }
 
     private fun finalizeAutoScan() {
-        if (_allChannels.value.isEmpty() && _masterTvChannels.value.isNotEmpty()) {
-            _allChannels.value = listOf(_masterTvChannels.value[0])
-        }
-        if (_radioChannels.value.isEmpty() && _masterRadioChannels.value.isNotEmpty()) {
-            _radioChannels.value = listOf(_masterRadioChannels.value[0])
-        }
+        scanJob?.cancel()
+        scanJob = null
+        _allChannels.value = _masterTvChannels.value
+        _radioChannels.value = _masterRadioChannels.value
         _activeList.value = if (_isRadioMode.value) _radioChannels.value else _allChannels.value
         _currentIndex.value = 0
-        _listScrollY.value = 0f
         _viewState.value = ViewState.LIST
-        playChannel(0)
+        if (_activeList.value.isNotEmpty()) playChannel(0) else _showNoSignal.value = true
     }
 
-    // Snake Game
-    fun startSnakeGame() {
-        _snakeGameState.value = SnakeGameState(
-            snake = listOf(Point(5, 5), Point(4, 5), Point(3, 5)),
-            direction = Point(1, 0),
-            food = Point(10, 6),
-            score = 0,
-            isRunning = true
-        )
+    // ----------------------------------------------------------- snake game
 
-        viewModelScope.launch {
-            while (_snakeGameState.value.isRunning) {
+    fun startSnakeGame() {
+        if (snakeJob?.isActive == true) return
+        _snakeGameState.value = SnakeGameState(isRunning = true)
+
+        snakeJob = viewModelScope.launch {
+            while (isActive) {
+                delay(180)
                 val state = _snakeGameState.value
-                val head = state.snake[0]
-                val newHead = Point(
-                    (head.x + state.direction.x + 26) % 26,
-                    (head.y + state.direction.y + 16) % 16
+                if (!state.isRunning) break
+
+                val head = state.snake.first()
+                val next = Point(
+                    (head.x + state.direction.x + GRID_WIDTH) % GRID_WIDTH,
+                    (head.y + state.direction.y + GRID_HEIGHT) % GRID_HEIGHT
                 )
 
-                val newSnake = (newHead + state.snake).toList()
-                var newFood = state.food
-                var newScore = state.score
-
-                if (newHead == state.food) {
-                    newScore += 10
-                    newFood = Point((Math.random() * 24 + 1).toInt(), (Math.random() * 14 + 1).toInt())
-                } else {
-                    _snakeGameState.value = _snakeGameState.value.copy(snake = newSnake.dropLast(1))
+                val hitsBody = state.snake.dropLast(1).contains(next)
+                if (hitsBody) {
+                    _snakeGameState.value = state.copy(isRunning = false, isGameOver = true)
+                    break
                 }
 
-                _snakeGameState.value = _snakeGameState.value.copy(
-                    snake = if (newHead == state.food) newSnake else newSnake.dropLast(1),
-                    food = newFood,
-                    score = newScore
-                )
+                val eating = next == state.food
+                val body = if (eating) state.snake else state.snake.dropLast(1)
+                val newSnake = listOf(next) + body
 
-                kotlinx.coroutines.delay(220)
+                _snakeGameState.value = state.copy(
+                    snake = newSnake,
+                    food = if (eating) spawnFood(newSnake) else state.food,
+                    score = if (eating) state.score + 10 else state.score,
+                    isRunning = true,
+                    isGameOver = false
+                )
             }
         }
     }
 
     fun stopSnakeGame() {
+        snakeJob?.cancel()
+        snakeJob = null
         _snakeGameState.value = _snakeGameState.value.copy(isRunning = false)
     }
 
-    // Getters for UI
-    val menuItems = MENU_ITEMS
-    val itemsPerPage = 10
+    private fun changeSnakeDirection(direction: Point) {
+        val state = _snakeGameState.value
+        if (!state.isRunning) {
+            startSnakeGame()
+            return
+        }
+        // Ignore 180° reversals.
+        if (state.direction.x == -direction.x && state.direction.y == -direction.y) return
+        _snakeGameState.value = state.copy(direction = direction)
+    }
+
+    private fun spawnFood(snake: List<Point>): Point {
+        repeat(200) {
+            val candidate = Point(
+                (0 until GRID_WIDTH).random(),
+                (0 until GRID_HEIGHT).random()
+            )
+            if (!snake.contains(candidate)) return candidate
+        }
+        return Point(0, 0)
+    }
+
+    // ---------------------------------------------------------------- helpers
+
+    val menuItems: List<String> = MENU_ITEMS
+    val itemsPerPage: Int = PAGE_SIZE
 
     companion object {
+        const val PAGE_SIZE = 10
+        const val GRID_WIDTH = 26
+        const val GRID_HEIGHT = 16
+
         private val MENU_ITEMS = listOf(
             "TV List",
             "Radio List",

@@ -1,165 +1,133 @@
 package com.mummyflix.ui
 
-import android.content.Context
-import android.net.Uri
-import android.util.AttributeSet
-import android.view.View
-import android.widget.FrameLayout
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import android.view.ViewGroup
+import androidx.annotation.OptIn
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.MediaItem
-import androidx.media3.exoplayer.source.hls.HlsMediaSource
-import androidx.media3.exoplayer.upstream.DefaultHttpDataSource
+import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import com.mummyflix.R
 import com.mummyflix.model.ViewState
 import com.mummyflix.viewmodel.MummyFlixViewModel
-import kotlinx.coroutines.launch
 
+/**
+ * Single ExoPlayer instance that fills the screen. Every OSD screen draws its
+ * panels on top of it, so switching between list/menu/fullscreen never
+ * re-creates the player or interrupts playback.
+ */
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoPlayerLayer(
-    viewModel: MummyFlixViewModel,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
+fun VideoPlayerLayer(viewModel: MummyFlixViewModel) {
     val videoUrl = viewModel.videoUrl.value
     val isRadioMode = viewModel.isRadioMode.value
     val viewState = viewModel.viewState.value
-    val currentChannelName = viewModel.activeList.value.getOrNull(viewModel.currentIndex.value)?.name ?: ""
+    val currentChannel = viewModel.activeList.value.getOrNull(viewModel.currentIndex.value)
 
-    // PlayerView container that fills the preview area in LIST/MENU/SUBMENU mode
-    // or full screen in FULLSCREEN mode
-    val containerWidth = when (viewState) {
-        ViewState.LIST, ViewState.MENU, ViewState.SUBMENU -> 55.5f
-        ViewState.AUTOSCAN -> 0f
-        ViewState.FULLSCREEN -> 100f
-    }
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        AndroidVideoPlayer(
+            videoUrl = videoUrl,
+            onVideoPlaying = viewModel::onVideoPlaying,
+            onVideoError = viewModel::onVideoError
+        )
 
-    val containerHeight = when (viewState) {
-        ViewState.LIST, ViewState.MENU, ViewState.SUBMENU -> 52f
-        ViewState.AUTOSCAN -> 0f
-        ViewState.FULLSCREEN -> 100f
-    }
-
-    val containerLeft = when (viewState) {
-        ViewState.LIST, ViewState.MENU, ViewState.SUBMENU -> 42.5f
-        else -> 0f
-    }
-
-    val containerTop = when (viewState) {
-        ViewState.LIST, ViewState.MENU, ViewState.SUBMENU -> 13f
-        else -> 0f
-    }
-
-    Box(
-        modifier = modifier
-            .width(if (viewState == ViewState.FULLSCREEN || viewState == ViewState.AUTOSCAN) 0.dp else containerWidth.dp)
-            .height(if (viewState == ViewState.FULLSCREEN || viewState == ViewState.AUTOSCAN) 0.dp else containerHeight.dp)
-            .offset(x = containerLeft.dp, y = containerTop.dp)
-            .background(Color.Black)
-            .border(width = if (viewState == ViewState.FULLSCREEN) 0.dp else 3.dp, color = com.mummyflix.ui.colorResource(com.mummyflix.R.color.border_cyan_light))
-            .clip(androidx.compose.foundation.shape.RoundedCornerShape(0.dp)),
-        contentAlignment = Alignment.Center
-    ) {
-        if (viewState != ViewState.FULLSCREEN && viewState != ViewState.AUTOSCAN) {
-            AndroidVideoPlayer(
-                videoUrl = videoUrl,
-                isRadioMode = isRadioMode,
-                currentChannelName = currentChannelName,
-                onVideoPlaying = { viewModel.onVideoPlaying() },
-                onVideoError = { viewModel.onVideoError() }
-            )
+        if (isRadioMode) {
+            RadioModeOverlay(channelName = currentChannel?.displayName ?: "")
         }
-    }
 
-    // Fullscreen video player
-    if (viewState == ViewState.FULLSCREEN) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            AndroidVideoPlayer(
-                videoUrl = videoUrl,
-                isRadioMode = isRadioMode,
-                currentChannelName = currentChannelName,
-                onVideoPlaying = { viewModel.onVideoPlaying() },
-                onVideoError = { viewModel.onVideoError() },
-                isFullscreen = true
-            )
+        if (viewModel.showNoSignal.value && viewState != ViewState.AUTOSCAN) {
+            NoSignalOverlay(isLoading = viewModel.isLoading.value)
         }
-    }
-
-    // Radio mode overlay
-    if (isRadioMode && viewState != ViewState.FULLSCREEN) {
-        RadioModeOverlay(channelName = currentChannelName)
-    }
-
-    // No signal overlay
-    if (viewModel.showNoSignal.value && viewState != ViewState.FULLSCREEN && viewState != ViewState.AUTOSCAN) {
-        NoSignalOverlay()
     }
 }
 
+@OptIn(UnstableApi::class)
 @Composable
 fun AndroidVideoPlayer(
     videoUrl: String,
-    isRadioMode: Boolean,
-    currentChannelName: String,
     onVideoPlaying: () -> Unit,
-    onVideoError: () -> Unit,
-    isFullscreen: Boolean = false
+    onVideoError: () -> Unit
 ) {
     val context = LocalContext.current
-    val player = remember { createExoPlayer(context) }
+    val currentOnPlaying by rememberUpdatedState(onVideoPlaying)
+    val currentOnError by rememberUpdatedState(onVideoError)
 
-    DisposableEffect(Unit) {
-        onDispose { player.release() }
+    val player = remember {
+        ExoPlayer.Builder(context).build().apply {
+            playWhenReady = true
+            repeatMode = Player.REPEAT_MODE_OFF
+        }
+    }
+
+    DisposableEffect(player) {
+        val listener = object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_READY) currentOnPlaying()
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                currentOnError()
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (isPlaying) currentOnPlaying()
+            }
+        }
+        player.addListener(listener)
+        onDispose {
+            player.removeListener(listener)
+            player.release()
+        }
     }
 
     LaunchedEffect(videoUrl) {
-        if (videoUrl.isNotEmpty()) {
-            playVideo(player, videoUrl, context)
+        if (videoUrl.isBlank()) {
+            player.stop()
+            player.clearMediaItems()
+            return@LaunchedEffect
         }
-    }
 
-    // Observe playback state
-    LaunchedEffect(player.playWhenReady, player.playbackState) {
-        when (player.playbackState) {
-            androidx.media3.exoplayer.ExoPlayer.STATE_READY -> {
-                if (player.playWhenReady) {
-                    onVideoPlaying()
-                }
-            }
-            androidx.media3.exoplayer.ExoPlayer.STATE_ENDED -> {
-                // Handle end
-            }
-        }
-    }
+        val dataSourceFactory = DefaultHttpDataSource.Factory()
+            .setUserAgent("MummyFlix/1.0")
+            .setConnectTimeoutMs(10_000)
+            .setReadTimeoutMs(10_000)
+            .setAllowCrossProtocolRedirects(true)
 
-    // Handle errors
-    LaunchedEffect(player.playbackState) {
-        if (player.playbackState == androidx.media3.exoplayer.ExoPlayer.STATE_IDLE) {
-            val error = player.playerError
-            if (error != null) {
-                onVideoError()
-            }
-        }
+        val mediaSource = HlsMediaSource.Factory(dataSourceFactory)
+            .setAllowChunklessPreparation(true)
+            .createMediaSource(MediaItem.fromUri(videoUrl))
+
+        player.setMediaSource(mediaSource)
+        player.prepare()
+        player.playWhenReady = true
     }
 
     AndroidView(
@@ -167,34 +135,15 @@ fun AndroidVideoPlayer(
             PlayerView(ctx).apply {
                 this.player = player
                 useController = false
-                resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL
-                layoutParams = FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT
+                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
                 )
             }
         },
         modifier = Modifier.fillMaxSize()
     )
-}
-
-private fun createExoPlayer(context: Context): ExoPlayer {
-    return ExoPlayer.Builder(context)
-        .build()
-}
-
-private fun playVideo(player: ExoPlayer, url: String, context: Context) {
-    val mediaItem = MediaItem.fromUri(url)
-    val dataSourceFactory = DefaultHttpDataSource.Factory()
-        .setUserAgent("MummyFlix/1.0")
-        .setConnectTimeoutMs(8000)
-        .setReadTimeoutMs(8000)
-    val hlsMediaSource = HlsMediaSource.Factory(dataSourceFactory)
-        .createMediaSource(mediaItem)
-
-    player.setMediaSource(hlsMediaSource)
-    player.prepare()
-    player.playWhenReady = true
 }
 
 @Composable
@@ -204,62 +153,41 @@ fun RadioModeOverlay(channelName: String) {
             .fillMaxSize()
             .background(
                 Brush.radialGradient(
-                    center = androidx.compose.ui.graphics.Center(0.5f, 0.5f),
-                    radius = 100.dp,
-                    colors = listOf(
-                        colorResource(com.mummyflix.R.color.bg_radial_1),
-                        colorResource(com.mummyflix.R.color.bg_radial_2),
-                        colorResource(com.mummyflix.R.color.bg_radial_3)
+                    listOf(
+                        colorResource(R.color.bg_radial_1),
+                        colorResource(R.color.bg_radial_2),
+                        colorResource(R.color.bg_radial_3)
                     )
                 )
             ),
         contentAlignment = Alignment.Center
     ) {
         Column(
+            modifier = Modifier
+                .background(colorResource(R.color.bg_blue_9).copy(alpha = 0.88f), RoundedCornerShape(8.dp))
+                .padding(horizontal = 26.dp, vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 24.dp, vertical = 10.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Rgb(0x04, 0x1f, 0x42).copy(alpha = 0.85f),
-                                Color.Rgb(0x04, 0x1f, 0x42).copy(alpha = 0.85f)
-                            )
-                        )
-                    )
-                    .border(width = 2.dp, color = colorResource(com.mummyflix.R.color.border_cyan_light))
-                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(6.dp))
+            Text(
+                text = "♫ RADIO",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = colorResource(R.color.secondary),
+                letterSpacing = 3.sp
+            )
+            Text(
+                text = channelName.take(28),
+                fontSize = 14.sp,
+                color = Color.White,
+                textAlign = TextAlign.Center
+            )
+            Row(
+                modifier = Modifier.padding(top = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                verticalAlignment = Alignment.Bottom
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "♫ RADIO",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colorResource(com.mummyflix.R.color.secondary),
-                        letterSpacing = 3.sp
-                    )
-                    Text(
-                        text = channelName.take(20),
-                        fontSize = 14.sp,
-                        color = Color.White
-                    )
-                    // Radio waves animation
-                    Row(
-                        modifier = Modifier.padding(top = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        repeat(5) { index ->
-                            AnimatedWaveBar(index = index)
-                        }
-                    }
-                }
+                repeat(7) { index -> AnimatedWaveBar(index) }
             }
         }
     }
@@ -267,58 +195,87 @@ fun RadioModeOverlay(channelName: String) {
 
 @Composable
 fun AnimatedWaveBar(index: Int) {
-    val delays = listOf(0f, 0.2f, 0.4f, 0.1f, 0.3f)
-    val animatedHeight = remember {
-        mutableStateOf(5f)
-    }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            val delay = delays.getOrNull(index) ?: 0f
-            if (delay > 0) {
-                kotlinx.coroutines.delay((delay * 1000).toLong())
-            }
-            animateFloatAsState(
-                targetValue = if (animatedHeight.value == 5f) 22f else 5f,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
-            ).value.also { animatedHeight.value = it }
-            kotlinx.coroutines.delay(800)
-        }
-    }
+    val infinite = rememberInfiniteTransition(label = "wave")
+    val baseline = 6f
+    val peak = (18 + (index * 5) % 16).toFloat()
+    val height by infinite.animateFloat(
+        initialValue = baseline,
+        targetValue = peak,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 500 + index * 90,
+                easing = LinearEasing
+            ),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "waveHeight"
+    )
 
     Box(
         modifier = Modifier
             .width(6.dp)
-            .height(animatedHeight.value.dp)
+            .height(height.dp)
             .background(
-                if (animatedHeight.value > 13f)
-                    colorResource(com.mummyflix.R.color.secondary)
-                else
-                    colorResource(com.mummyflix.R.color.wave_blue)
+                if (index % 2 == 0) colorResource(R.color.secondary)
+                else colorResource(R.color.wave_blue),
+                RoundedCornerShape(2.dp)
             )
     )
 }
 
 @Composable
-fun NoSignalOverlay() {
+fun NoSignalOverlay(isLoading: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Transparent),
+            .background(Color.Black.copy(alpha = 0.75f)),
         contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .padding(horizontal = 32.dp, vertical = 8.dp)
-                .background(colorResource(com.mummyflix.R.color.wave_blue))
-                .border(width = 2.dp, color = colorResource(com.mummyflix.R.color.border_cyan_light))
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = if (isLoading) stringResource(R.string.loading_channels)
+                else stringResource(R.string.no_signal),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = colorResource(R.color.text_cyan),
+                letterSpacing = 1.sp
+            )
+            if (!isLoading) {
+                Text(
+                    text = "Press MENU to open the channel list",
+                    fontSize = 11.sp,
+                    color = colorResource(R.color.border_cyan_light),
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun WatermarkOverlay() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
+        Column(
+            modifier = Modifier.padding(bottom = 34.dp, end = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = stringResource(com.mummyflix.R.string.no_signal),
-                fontSize = 16.sp,
+                text = "SR",
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = colorResource(com.mummyflix.R.color.text_dark_blue_3),
-                letterSpacing = 1.sp
+                fontStyle = FontStyle.Italic,
+                color = Color.White.copy(alpha = 0.9f),
+                letterSpacing = 1.5.sp
+            )
+            Text(
+                text = "PLUS",
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Black,
+                color = colorResource(R.color.watermark_orange),
+                letterSpacing = 2.5.sp,
+                modifier = Modifier
+                    .background(Color.White.copy(alpha = 0.85f), RoundedCornerShape(2.dp))
+                    .padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
     }

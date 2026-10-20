@@ -5,34 +5,38 @@ import android.view.KeyEvent
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.FontStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.lifecycleScope
 import com.mummyflix.model.ViewState
-import com.mummyflix.ui.*
+import com.mummyflix.ui.AutoScanOSD
+import com.mummyflix.ui.ChannelBanner
+import com.mummyflix.ui.ChannelListOSD
+import com.mummyflix.ui.FullscreenMode
+import com.mummyflix.ui.MainMenuOSD
+import com.mummyflix.ui.NumericInputOSD
+import com.mummyflix.ui.SubMenuOSD
+import com.mummyflix.ui.VideoPlayerLayer
 import com.mummyflix.ui.theme.MummyFlixTheme
 import com.mummyflix.viewmodel.MummyFlixViewModel
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
-    private val viewModel: MummyFlixViewModel by viewModels()
+    private val viewModel: MummyFlixViewModel
+        get() = (application as MummyFlixApplication).viewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        hideSystemUi()
         setContent {
             MummyFlixTheme {
                 MummyFlixScreen(viewModel = viewModel)
@@ -40,15 +44,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun enableEdgeToEdge() {
-        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
-        window.setNavigationBarColor(android.graphics.Color.TRANSPARENT)
-        window.setStatusBarColor(android.graphics.Color.TRANSPARENT)
+    private fun hideSystemUi() {
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = (
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            )
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -58,11 +65,15 @@ class MainActivity : ComponentActivity() {
             KeyEvent.KEYCODE_DPAD_LEFT -> { viewModel.handleLeftRight(-1); true }
             KeyEvent.KEYCODE_DPAD_RIGHT -> { viewModel.handleLeftRight(1); true }
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> { viewModel.handleOkKey(); true }
-            KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_MENU, KeyEvent.KEYCODE_ESCAPE -> { viewModel.handleMenuKey(); true }
-            KeyEvent.KEYCODE_INFO -> { viewModel.showBanner(); true }
+            KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_MENU, KeyEvent.KEYCODE_ESCAPE -> {
+                viewModel.handleMenuKey(); true
+            }
+            KeyEvent.KEYCODE_INFO, KeyEvent.KEYCODE_I -> { viewModel.showBanner(); true }
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                viewModel.handleOkKey(); true
+            }
             in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 -> {
-                val digit = (keyCode - KeyEvent.KEYCODE_0).toString()
-                viewModel.handleNumericKey(digit)
+                viewModel.handleNumericKey((keyCode - KeyEvent.KEYCODE_0).toString())
                 true
             }
             else -> super.onKeyDown(keyCode, event)
@@ -80,14 +91,9 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MummyFlixScreen(viewModel: MummyFlixViewModel) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Background
-        Box(modifier = Modifier.fillMaxSize().background(Color.Black))
-
-        // Video Layer
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         VideoPlayerLayer(viewModel = viewModel)
 
-        // OSD Overlay based on view state
         when (viewModel.viewState.value) {
             ViewState.LIST -> ChannelListOSD(viewModel)
             ViewState.MENU -> MainMenuOSD(viewModel)
@@ -96,28 +102,22 @@ fun MummyFlixScreen(viewModel: MummyFlixViewModel) {
             ViewState.FULLSCREEN -> FullscreenMode(viewModel)
         }
 
-        // Channel Banner (in fullscreen)
         if (viewModel.bannerState.value.isVisible) {
             ChannelBanner(viewModel.bannerState.value)
         }
 
-        // Numeric Input OSD
         if (viewModel.numericInput.value.isVisible) {
             NumericInputOSD(viewModel.numericInput.value.buffer)
         }
 
-        // Branding watermark - "Developed by Sanchit"
-        Box(
+        Text(
+            text = "Developed by Sanchit",
+            fontSize = 9.sp,
+            color = Color.White.copy(alpha = 0.35f),
+            fontStyle = FontStyle.Italic,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        ) {
-            androidx.compose.material3.Text(
-                text = "Developed by Sanchit",
-                fontSize = 10.sp,
-                color = Color.White.copy(alpha = 0.4f),
-                fontStyle = FontStyle.Italic
-            )
-        }
+                .padding(8.dp)
+        )
     }
 }

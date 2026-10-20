@@ -6,9 +6,11 @@ import kotlinx.coroutines.withContext
 import java.net.URL
 
 class ChannelRepository {
+
     companion object {
         private const val PLAYLIST_URL = "https://iptv-org.github.io/iptv/countries/in.m3u"
-        private const val ITEMS_PER_PAGE = 10
+        private val RADIO_PATTERN =
+            Regex("(?i)music|9x|mastiii|b4u|mtv|vh1|radio|fm|hits|sangeet|zing|tune")
         private val DEFAULT_RADIO_NAMES = listOf(
             "Radio Mirchi", "Red FM", "Radio City", "Big FM", "Fever FM",
             "Radio One", "Radio Nasha", "Radio Mango", "Radio Dhamaal", "Ishq FM"
@@ -17,59 +19,47 @@ class ChannelRepository {
 
     suspend fun loadPlaylist(): Result<List<Channel>> = withContext(Dispatchers.IO) {
         try {
-            val url = URL(PLAYLIST_URL)
-            val text = url.readText()
-            val lines = text.lines()
-            val masterTvChannels = mutableListOf<Channel>()
+            val text = URL(PLAYLIST_URL).readText()
+            val channels = mutableListOf<Channel>()
             var currentName = ""
 
-            for (line in lines) {
+            text.lineSequence().forEach { line ->
                 val trimmed = line.trim()
-                if (trimmed.startsWith("#EXTINF:")) {
-                    val parts = trimmed.split(",")
-                    currentName = parts.last().trim().ifEmpty { "Unknown Channel" }
-                } else if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
-                    masterTvChannels.add(Channel(
-                        name = currentName,
-                        url = trimmed,
-                        fav = false,
-                        locked = false
-                    ))
-                    currentName = ""
+                when {
+                    trimmed.startsWith("#EXTINF:") -> {
+                        currentName = trimmed.substringAfter(',', "Unknown Channel").trim()
+                    }
+                    trimmed.isNotEmpty() && !trimmed.startsWith("#") -> {
+                        channels += Channel(
+                            name = currentName.ifBlank { "Unknown Channel" },
+                            url = trimmed
+                        )
+                        currentName = ""
+                    }
                 }
             }
-
-            val matchedRadio = masterTvChannels.filter { channel ->
-                channel.name.matches(Regex("(?i)music|9x|mastiii|b4u|mtv|vh1|radio|fm|hits|sangeet|zing|tune"))
-            }
-
-            val masterRadioChannels = DEFAULT_RADIO_NAMES.mapIndexed { idx, rName ->
-                Channel(
-                    name = rName,
-                    url = matchedRadio.getOrNull(idx % matchedRadio.size)?.url
-                        ?: masterTvChannels.getOrNull(idx)?.url
-                        ?: "",
-                    fav = false,
-                    locked = false
-                )
-            } + matchedRadio.map { it.copy() }
-
-            Result.Success(masterTvChannels)
+            Result.success(channels)
         } catch (e: Exception) {
-            Result.Failure(e)
+            Result.failure(e)
         }
     }
 
     fun getDefaultRadioNames(): List<String> = DEFAULT_RADIO_NAMES
 
-    fun filterRadioChannels(channels: List<Channel>): List<Channel> {
-        return channels.filter { channel ->
-            channel.name.matches(Regex("(?i)music|9x|mastiii|b4u|mtv|vh1|radio|fm|hits|sangeet|zing|tune"))
-        }
-    }
-}
+    fun filterRadioChannels(channels: List<Channel>): List<Channel> =
+        channels.filter { RADIO_PATTERN.containsMatchIn(it.name) }
 
-sealed class Result<out T> {
-    data class Success<out T>(val data: T) : Result<T>()
-    data class Failure(val exception: Throwable) : Result<Nothing>()
+    /** Builds the radio list: a stable set of named stations plus any music channels. */
+    fun buildRadioChannels(tvChannels: List<Channel>): List<Channel> {
+        val matched = filterRadioChannels(tvChannels)
+        val named = DEFAULT_RADIO_NAMES.mapIndexed { index, name ->
+            Channel(
+                name = name,
+                url = matched.getOrNull(index % matched.size.coerceAtLeast(1))?.url
+                    ?: tvChannels.getOrNull(index)?.url
+                    ?: ""
+            )
+        }
+        return (named + matched).distinctBy { it.url }
+    }
 }

@@ -1,511 +1,258 @@
 package com.mummyflix.ui
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.FontStyle
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mummyflix.model.*
+import com.mummyflix.R
+import com.mummyflix.model.Channel
+import com.mummyflix.model.SnakeGameState
+import com.mummyflix.model.SubMenuType
 import com.mummyflix.viewmodel.MummyFlixViewModel
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SubMenuOSD(viewModel: MummyFlixViewModel) {
-    val subMenu = viewModel.activeSubMenu.value
+    val subMenu = viewModel.activeSubMenu.value ?: return
+    val options = viewModel.currentSubMenuOptions()
     val subMenuIndex = viewModel.subMenuIndex.value
 
-    if (subMenu == null) return
+    Column(modifier = Modifier.fillMaxSize()) {
+        OsdHeader(title = subMenu.title)
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black),
-        contentAlignment = Alignment.TopStart
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            colorResource(R.color.bg_dark_blue_1),
-                            colorResource(R.color.bg_dark_blue_2),
-                            colorResource(R.color.bg_dark_blue_3)
+        Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.42f)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                colorResource(R.color.bg_dark_blue_1),
+                                colorResource(R.color.bg_dark_blue_2),
+                                colorResource(R.color.bg_dark_blue_3)
+                            )
                         )
                     )
-                )
-                .border(width = 3.dp, color = colorResource(R.color.border_cyan)),
-            contentAlignment = Alignment.TopStart
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Header
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.105f)
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    colorResource(R.color.border_cyan_light),
-                                    colorResource(R.color.border_blue),
-                                    colorResource(R.color.bg_blue_12),
-                                    colorResource(R.color.bg_blue_13)
-                                )
-                            )
-                        )
-                        .border(bottom = BorderStroke(2.dp, colorResource(R.color.border_cyan_lighter))),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    .border(2.dp, colorResource(R.color.border_cyan))
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                if (options.isEmpty()) {
+                    ScreenTitle(subMenu.title)
+                    Hint("Use the panel on the right. Press MENU or OK to return.")
+                } else {
+                    options.forEachIndexed { index, option ->
+                        val active = index == subMenuIndex
                         Box(
                             modifier = Modifier
-                                .size(22.dp)
-                                .background(colorResource(R.color.bg_blue_12))
-                                .clip(CircleShape)
-                                .padding(4.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("➜", fontSize = 12.sp, color = colorResource(R.color.border_cyan_light), fontWeight = FontWeight.Bold)
-                        }
-                        Text(
-                            text = subMenu.title,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = colorResource(R.color.text_dark_blue),
-                            letterSpacing = 1.0.sp
-                        )
-                    }
-                }
-
-                // Body - Left Panel (Menu) + Right Panel (Option Panel)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                ) {
-                    // Left Panel - Submenu Items
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth(0.405f)
-                            .fillMaxHeight()
-                            .padding(right = 7.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        subMenu.options.forEachIndexed { index, item ->
-                            val isActive = index == subMenuIndex
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f)
-                                    .background(
-                                        if (isActive)
-                                            Brush.verticalGradient(
-                                                colors = listOf(
-                                                    colorResource(R.color.secondary),
-                                                    colorResource(R.color.secondary_variant)
-                                                )
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .background(
+                                    if (active) {
+                                        Brush.horizontalGradient(
+                                            listOf(
+                                                colorResource(R.color.secondary),
+                                                colorResource(R.color.secondary_variant)
                                             )
-                                        else
-                                            Brush.verticalGradient(
-                                                colors = listOf(
-                                                    colorResource(R.color.bg_blue_1),
-                                                    colorResource(R.color.bg_blue_2)
-                                                )
+                                        )
+                                    } else {
+                                        Brush.horizontalGradient(
+                                            listOf(
+                                                colorResource(R.color.bg_blue_1).copy(alpha = 0.6f),
+                                                colorResource(R.color.bg_blue_2).copy(alpha = 0.6f)
                                             )
-                                    )
-                                    .border(
-                                        width = 1.5.dp,
-                                        color = if (isActive) Color.White else colorResource(R.color.bg_blue_3)
-                                    )
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .padding(horizontal = 10.dp)
-                                    .fillMaxWidth()
-                                    .clickable { viewModel.subMenuIndex.value = index },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = item,
-                                    fontSize = 16.sp,
-                                    color = if (isActive) Color.Black else colorResource(R.color.text_cyan),
-                                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-                                    letterSpacing = 0.5.sp,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                        )
+                                    },
+                                    RoundedCornerShape(3.dp)
                                 )
-                            }
-                        }
-                    }
-
-                    // Right Panel - Option Panel
-                    OptionPanelContent(viewModel = viewModel, subMenu = subMenu)
-                }
-
-                // Footer
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.125f)
-                        .minHeight(36.dp)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    colorResource(R.color.border_cyan),
-                                    colorResource(R.color.border_cyan_dark)
+                                .border(
+                                    1.dp,
+                                    if (active) Color.White else colorResource(R.color.bg_blue_3),
+                                    RoundedCornerShape(3.dp)
                                 )
-                            )
-                        )
-                        .border(top = BorderStroke(2.dp, colorResource(R.color.border_cyan_lighter)))
-                        .padding(horizontal = 12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Move keys (for non-Game submenus)
-                        if (subMenu != SubMenuType.GAME) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                KeyBadge(label = "▲", onClick = { viewModel.moveSelection(-1) })
-                                KeyBadge(label = "▼", onClick = { viewModel.moveSelection(1) })
-                                Text(
-                                    text = stringResource(R.string.move),
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = colorResource(R.color.text_dark_blue)
-                                )
-                            }
-
-                            // Page keys
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                KeyBadge(label = "◄", onClick = { viewModel.handleLeftRight(-1) })
-                                KeyBadge(label = "►", onClick = { viewModel.handleLeftRight(1) })
-                                Text(
-                                    text = stringResource(R.string.change),
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = colorResource(R.color.text_dark_blue)
-                                )
-                            }
-                        }
-
-                        // OK key
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .clickable { viewModel.subMenuIndex.value = index },
+                            contentAlignment = Alignment.CenterStart
                         ) {
-                            KeyBadge(label = "OK")
                             Text(
-                                text = stringResource(R.string.select),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = colorResource(R.color.text_dark_blue)
+                                text = option,
+                                fontSize = 12.sp,
+                                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                                color = if (active) Color.Black else colorResource(R.color.text_cyan),
+                                maxLines = 1,
+                                modifier = Modifier.padding(horizontal = 8.dp)
                             )
-                        }
-
-                        // Menu key
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            KeyBadge(label = "MENU")
-                            Text(
-                                text = stringResource(R.string.back),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = colorResource(R.color.text_dark_blue)
-                            )
-                        }
-
-                        // Info circle
-                        Box(
-                            modifier = Modifier
-                                .size(28.dp)
-                                .background(colorResource(R.color.text_dark_blue_2))
-                                .clip(CircleShape)
-                                .clickable { viewModel.showBanner() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("i", fontSize = 16.sp, fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic, color = colorResource(R.color.border_cyan_light), fontFamily = FontFamily.Serif)
                         }
                     }
                 }
             }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(8.dp)
+            ) {
+                // Transparent window: the live video stays visible behind.
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .border(3.dp, colorResource(R.color.border_cyan_light))
+                )
+
+                SubMenuDetail(
+                    viewModel = viewModel,
+                    subMenu = subMenu,
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+            }
+        }
+
+        OsdFooter {
+            if (subMenu != SubMenuType.GAME) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    KeyBadge("▲", onClick = { viewModel.moveSelection(-1) })
+                    KeyBadge("▼", onClick = { viewModel.moveSelection(1) })
+                    FooterHint(stringResource(R.string.move))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    KeyBadge("◄", onClick = { viewModel.handleLeftRight(-1) })
+                    KeyBadge("►", onClick = { viewModel.handleLeftRight(1) })
+                    FooterHint(stringResource(R.string.change))
+                }
+            } else {
+                FooterHint("ARROWS: move snake   OK: restart")
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                KeyBadge("OK", onClick = viewModel::handleOkKey)
+                FooterHint(stringResource(R.string.select))
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                KeyBadge("MENU", onClick = viewModel::handleMenuKey)
+                FooterHint(stringResource(R.string.back))
+            }
+            InfoCircle(onClick = viewModel::showBanner)
         }
     }
 }
 
 @Composable
-fun OptionPanelContent(viewModel: MummyFlixViewModel, subMenu: SubMenuType) {
-    val currentChannel = viewModel.activeList.value.getOrNull(viewModel.currentIndex.value)
-    val subMenuIndex = viewModel.subMenuIndex.value
+private fun SubMenuDetail(
+    viewModel: MummyFlixViewModel,
+    subMenu: SubMenuType,
+    modifier: Modifier = Modifier
+) {
+    val channel = viewModel.activeList.value.getOrNull(viewModel.currentIndex.value)
+    val settings = viewModel.appSettings.value
 
     Column(
-        modifier = Modifier
-            .weight(1f)
-            .fillMaxHeight()
-            .padding(horizontal = 10.dp, vertical = 5.dp)
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        colorResource(R.color.bg_dark_blue_4),
-                        colorResource(R.color.bg_dark_blue_5)
-                    )
-                )
-            )
-            .border(width = 3.dp, color = colorResource(R.color.border_cyan_light)),
-        verticalArrangement = Arrangement.spacedBy(5.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.Black.copy(alpha = 0.78f))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        // Top Section - Options
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 5.dp)
-        ) {
-            Text(
-                text = "[ ${subMenu.title} ]",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.secondary)
-            )
-
-            subMenu.options.forEachIndexed { index, item ->
-                val isHighlighted = index == subMenuIndex
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 3.dp, horizontal = 5.dp)
-                        .background(if (isHighlighted) colorResource(R.color.secondary) else Color.Transparent)
-                        .border(width = 1.dp, color = if (isHighlighted) Color.White else Color.Transparent)
-                        .clip(RoundedCornerShape(3.dp))
-                        .clickable { viewModel.subMenuIndex.value = index; viewModel.handleOkKey() }
-                        .padding(horizontal = 8.dp, vertical = 5.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Text(
-                        text = item,
-                        fontSize = 14.sp,
-                        color = if (isHighlighted) Color.Black else colorResource(R.color.text_cyan),
-                        fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.Normal,
-                        letterSpacing = 0.5.sp
-                    )
-                }
-            }
-        }
-
-        // Bottom Section - Dynamic Content
         when (subMenu) {
-            SubMenuType.PROGRAM_SETUP -> ProgramSetupBottomPanel()
-            SubMenuType.PROGRAM_EDIT -> ProgramEditBottomPanel(channel = currentChannel)
-            SubMenuType.PROGRAM_INFO -> ProgramInfoBottomPanel(channel = currentChannel)
-            SubMenuType.LANGUAGE -> LanguageBottomPanel()
-            SubMenuType.SYSTEM_SETTING -> SystemSettingBottomPanel()
-            SubMenuType.GAME -> GameBottomPanel(viewModel = viewModel)
-            SubMenuType.SYSTEM_INFO -> SystemInfoBottomPanel(viewModel = viewModel)
+            SubMenuType.PROGRAM_SETUP -> {
+                ScreenTitle("Scan / Satellite")
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    SignalBar(stringResource(R.string.signal_intensity), 92, Modifier.weight(1f))
+                    SignalBar(stringResource(R.string.signal_quality), 78, Modifier.weight(1f))
+                }
+                Hint("LNB ${settings.lnbFreq}  •  TP ${settings.transponder}  •  ${settings.tvSystem}")
+            }
+
+            SubMenuType.PROGRAM_EDIT -> {
+                ScreenTitle("Edit: ${channel?.displayName ?: "—"}")
+                Hint("Favorite: ${if (channel?.fav == true) "YES" else "NO"}   Locked: ${if (channel?.locked == true) "YES" else "NO"}")
+                Hint(stringResource(R.string.press_ok_to_toggle))
+            }
+
+            SubMenuType.PROGRAM_INFO -> {
+                ScreenTitle(channel?.displayName ?: "No channel")
+                InfoRow("Number", (viewModel.currentIndex.value + 1).toString())
+                InfoRow("Type", if (viewModel.isRadioMode.value) "Radio" else "TV")
+                InfoRow("Frequency", "${settings.transponder} MHz")
+                InfoRow("Symbol Rate", "28490")
+                InfoRow("Favorite", if (channel?.fav == true) "YES" else "NO")
+                InfoRow("Locked", if (channel?.locked == true) "YES" else "NO")
+                if (channel != null && channel.url.isNotBlank()) {
+                    Text(
+                        text = channel.url,
+                        fontSize = 9.sp,
+                        color = colorResource(R.color.border_cyan_light),
+                        maxLines = 1
+                    )
+                }
+            }
+
+            SubMenuType.LANGUAGE -> {
+                ScreenTitle("Languages")
+                InfoRow("Menu Language", settings.menuLang)
+                InfoRow("Audio Language", settings.audioLang)
+                InfoRow("Subtitle", "OFF")
+                Hint(stringResource(R.string.tap_or_press_to_switch))
+            }
+
+            SubMenuType.SYSTEM_SETTING -> {
+                ScreenTitle("System")
+                InfoRow("TV System", settings.tvSystem)
+                InfoRow("Screen Ratio", settings.aspectRatio)
+                InfoRow("OSD Timeout", settings.osdTimeout)
+                Hint(stringResource(R.string.use_ok_to_adjust))
+            }
+
+            SubMenuType.GAME -> SnakeBoard(viewModel.snakeGameState.value)
+
+            SubMenuType.SYSTEM_INFO -> {
+                ScreenTitle("System Information")
+                InfoRow("Satellite", "INSAT 4B")
+                InfoRow("H/W Version", "GX6605S V1.2")
+                InfoRow("S/W Version", "3.0.4-IND")
+                InfoRow("TV Channels", viewModel.allChannels.value.size.toString())
+                InfoRow("Radio Channels", viewModel.radioChannels.value.size.toString())
+                InfoRow("Last Update", "2026-10-19")
+            }
         }
     }
 }
 
 @Composable
-fun ProgramSetupBottomPanel() {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+private fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row {
-            Text("Signal Intensity: 92%", fontSize = 14.sp, color = colorResource(R.color.text_cyan))
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(14.dp)
-                .background(colorResource(R.color.bg_blue_6))
-                .border(width = 1.dp, color = colorResource(R.color.border_cyan))
-                .clip(RoundedCornerShape(3.dp))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxWidth(0.92f)
-                    .height(14.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                colorResource(R.color.gradient_green_start),
-                                colorResource(R.color.gradient_green_end)
-                            )
-                        )
-                    )
-                    .clip(RoundedCornerShape(3.dp))
-            )
-        }
-        Row {
-            Text("Signal Quality: 78%", fontSize = 14.sp, color = colorResource(R.color.text_cyan))
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(14.dp)
-                .background(colorResource(R.color.bg_blue_6))
-                .border(width = 1.dp, color = colorResource(R.color.border_cyan))
-                .clip(RoundedCornerShape(3.dp))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxWidth(0.78f)
-                    .height(14.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                colorResource(R.color.gradient_green_start),
-                                colorResource(R.color.gradient_green_end)
-                            )
-                        )
-                    )
-                    .clip(RoundedCornerShape(3.dp))
-            )
-        }
-    }
-}
-
-@Composable
-fun ProgramEditBottomPanel(channel: Channel?) {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
+        Text(text = label, fontSize = 11.sp, color = colorResource(R.color.text_cyan))
         Text(
-            text = "Press OK to toggle Favorite, Lock or Delete channel.",
-            fontSize = 12.sp,
-            color = colorResource(R.color.border_cyan_light)
+            text = value,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            textAlign = TextAlign.End
         )
     }
 }
 
 @Composable
-fun ProgramInfoBottomPanel(channel: Channel?) {
+private fun SnakeBoard(state: SnakeGameState) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Row {
-            Text("Signal Intensity: 90%", fontSize = 14.sp, color = colorResource(R.color.text_cyan))
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(14.dp)
-                .background(colorResource(R.color.bg_blue_6))
-                .border(width = 1.dp, color = colorResource(R.color.border_cyan))
-                .clip(RoundedCornerShape(3.dp))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxWidth(0.90f)
-                    .height(14.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                colorResource(R.color.gradient_green_start),
-                                colorResource(R.color.gradient_green_end)
-                            )
-                        )
-                    )
-                    .clip(RoundedCornerShape(3.dp))
-            )
-        }
-        Row {
-            Text("Signal Quality: 76%", fontSize = 14.sp, color = colorResource(R.color.text_cyan))
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(14.dp)
-                .background(colorResource(R.color.bg_blue_6))
-                .border(width = 1.dp, color = colorResource(R.color.border_cyan))
-                .clip(RoundedCornerShape(3.dp))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxWidth(0.76f)
-                    .height(14.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                colorResource(R.color.gradient_green_start),
-                                colorResource(R.color.gradient_green_end)
-                            )
-                        )
-                    )
-                    .clip(RoundedCornerShape(3.dp))
-            )
-        }
-    }
-}
-
-@Composable
-fun LanguageBottomPanel() {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = "Tap or press ◄► / OK to switch language.",
-            fontSize = 12.sp,
-            color = colorResource(R.color.border_cyan_light)
-        )
-    }
-}
-
-@Composable
-fun SystemSettingBottomPanel() {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = "Use OK or ◄► to adjust video & system settings.",
-            fontSize = 12.sp,
-            color = colorResource(R.color.border_cyan_light)
-        )
-    }
-}
-
-@Composable
-fun GameBottomPanel(viewModel: MummyFlixViewModel) {
-    val snakeState = viewModel.snakeGameState.value
-
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+        modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Row(
@@ -514,105 +261,66 @@ fun GameBottomPanel(viewModel: MummyFlixViewModel) {
         ) {
             Text(
                 text = stringResource(R.string.box_snake_game),
-                fontSize = 16.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = colorResource(R.color.secondary)
             )
             Text(
-                text = "Score: ${snakeState.score}",
-                fontSize = 16.sp,
+                text = "${stringResource(R.string.score)}: ${state.score}",
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = colorResource(R.color.secondary)
             )
         }
 
-        // Snake Game Canvas
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1.625f) // 260/160
+                .aspectRatio(MummyFlixViewModel.GRID_WIDTH.toFloat() / MummyFlixViewModel.GRID_HEIGHT)
                 .background(colorResource(R.color.game_bg))
-                .border(width = 2.dp, color = colorResource(R.color.game_border))
-                .clip(RoundedCornerShape(0.dp))
+                .border(2.dp, colorResource(R.color.game_border))
         ) {
-            // Snake segments
-            snakeState.snake.forEach { point ->
-                Box(
-                    modifier = Modifier
-                        .size(10.dp)
-                        .background(colorResource(R.color.snake_yellow))
-                        .offset(
-                            x = (point.x * 10).dp,
-                            y = (point.y * 10).dp
-                        )
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val cellW = size.width / MummyFlixViewModel.GRID_WIDTH
+                val cellH = size.height / MummyFlixViewModel.GRID_HEIGHT
+                state.snake.forEachIndexed { index, point ->
+                    drawRect(
+                        color = if (index == 0) Color.White else Color(0xFFF5E625),
+                        topLeft = Offset(point.x * cellW, point.y * cellH),
+                        size = Size(cellW - 1f, cellH - 1f)
+                    )
+                }
+                drawRect(
+                    color = Color(0xFFFF4D6D),
+                    topLeft = Offset(state.food.x * cellW, state.food.y * cellH),
+                    size = Size(cellW - 1f, cellH - 1f)
                 )
             }
-            // Food
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .background(colorResource(R.color.food_red))
-                    .offset(
-                        x = (snakeState.food.x * 10).dp,
-                        y = (snakeState.food.y * 10).dp
+
+            if (state.isGameOver) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.7f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "GAME OVER\nPress OK to restart",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colorResource(R.color.secondary),
+                        textAlign = TextAlign.Center
                     )
-            )
+                }
+            }
         }
 
         Text(
             text = stringResource(R.string.use_arrows_to_move),
-            fontSize = 11.sp,
+            fontSize = 10.sp,
             color = colorResource(R.color.border_cyan_light),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
-    }
-}
-
-@Composable
-fun SystemInfoBottomPanel(viewModel: MummyFlixViewModel) {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Row {
-            Text("Satellite:", fontSize = 14.sp, color = colorResource(R.color.text_cyan), modifier = Modifier.weight(1f))
-            Text("INSAT 4B", fontSize = 14.sp, color = colorResource(R.color.text_white), fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-        }
-        Row {
-            Text("H/W Version:", fontSize = 14.sp, color = colorResource(R.color.text_cyan), modifier = Modifier.weight(1f))
-            Text("GX6605S V1.2", fontSize = 14.sp, color = colorResource(R.color.text_white), fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-        }
-        Row {
-            Text("S/W Version:", fontSize = 14.sp, color = colorResource(R.color.text_cyan), modifier = Modifier.weight(1f))
-            Text("V3.04-IND", fontSize = 14.sp, color = colorResource(R.color.text_white), fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-        }
-        Row {
-            Text("Scanned TV / Radio:", fontSize = 14.sp, color = colorResource(R.color.text_cyan), modifier = Modifier.weight(1f))
-            Text("${viewModel.allChannels.value.size} / ${viewModel.radioChannels.value.size}", fontSize = 14.sp, color = colorResource(R.color.text_white), fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-        }
-        Row {
-            Text("Last Update:", fontSize = 14.sp, color = colorResource(R.color.text_cyan), modifier = Modifier.weight(1f))
-            Text("2026-10-19", fontSize = 14.sp, color = colorResource(R.color.text_white), fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-        }
-
-        // OK / Return button
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp)
-                .background(colorResource(R.color.secondary))
-                .clip(RoundedCornerShape(3.dp))
-                .clickable { viewModel.handleMenuKey() }
-                .padding(vertical = 8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = stringResource(R.string.ok_return),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-        }
     }
 }

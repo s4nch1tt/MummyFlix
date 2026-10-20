@@ -1,20 +1,25 @@
 package com.mummyflix.ui.theme
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF8ecae6),
-    primaryContainer = Color(0xFF0b4a8b),
-    secondary = Color(0xFFf5e625),
-    secondaryContainer = Color(0xFFd4be06),
-    tertiary = Color(0xFFff6b35),
+    primary = Color(0xFF8ECAE6),
+    primaryContainer = Color(0xFF0B4A8B),
+    secondary = Color(0xFFF5E625),
+    secondaryContainer = Color(0xFFD4BE06),
+    tertiary = Color(0xFFFF6B35),
     background = Color.Black,
-    surface = Color(0xFF0b4a8b),
-    error = Color(0xFFe63946),
+    surface = Color(0xFF0B4A8B),
+    error = Color(0xFFE63946),
     onPrimary = Color.Black,
     onSecondary = Color.Black,
     onBackground = Color.White,
@@ -23,14 +28,14 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF0b4a8b),
-    primaryContainer = Color(0xFF8ecae6),
-    secondary = Color(0xFFd4be06),
-    secondaryContainer = Color(0xFFf5e625),
-    tertiary = Color(0xFFff6b35),
+    primary = Color(0xFF0B4A8B),
+    primaryContainer = Color(0xFF8ECAE6),
+    secondary = Color(0xFFD4BE06),
+    secondaryContainer = Color(0xFFF5E625),
+    tertiary = Color(0xFFFF6B35),
     background = Color.White,
-    surface = Color(0xFFf0f0f0),
-    error = Color(0xFFe63946),
+    surface = Color(0xFFF0F0F0),
+    error = Color(0xFFE63946),
     onPrimary = Color.White,
     onSecondary = Color.Black,
     onBackground = Color.Black,
@@ -38,38 +43,43 @@ private val LightColorScheme = lightColorScheme(
     onError = Color.White
 )
 
+/** Monospace, set-top-box style type scale. */
+private val MummyFlixTypography = Typography(
+    headlineMedium = TextStyle(
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Bold,
+        fontSize = 20.sp
+    ),
+    titleLarge = TextStyle(
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Bold,
+        fontSize = 18.sp
+    ),
+    bodyLarge = TextStyle(
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp
+    ),
+    labelLarge = TextStyle(
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Bold,
+        fontSize = 14.sp
+    )
+)
+
 @Composable
 fun MummyFlixTheme(
     darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
+        colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+        typography = MummyFlixTypography,
         content = content
-    )
-}
-
-object Typography {
-    val bodyLarge = androidx.compose.material3.TextStyle(
-        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-        fontWeight = androidx.compose.ui.text.font.FontWeight.Normal,
-        fontSize = 14.sp
-    )
-    val bodyMedium = androidx.compose.material3.TextStyle(
-        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-        fontWeight = androidx.compose.ui.text.font.FontWeight.Normal,
-        fontSize = 12.sp
-    )
-    val labelLarge = androidx.compose.material3.TextStyle(
-        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-        fontSize = 14.sp
-    )
-    val headlineMedium = androidx.compose.material3.TextStyle(
-        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-        fontSize = 20.sp
     )
 }

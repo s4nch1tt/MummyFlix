@@ -1,365 +1,204 @@
 package com.mummyflix.ui
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.FontStyle
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mummyflix.model.*
+import com.mummyflix.R
+import com.mummyflix.model.ScanProgress
 import com.mummyflix.viewmodel.MummyFlixViewModel
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AutoScanOSD(viewModel: MummyFlixViewModel) {
-    val scanProgress = viewModel.scanProgress.value
+    val scan: ScanProgress = viewModel.scanProgress.value
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
-        contentAlignment = Alignment.TopStart
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            colorResource(R.color.bg_dark_blue_1),
-                            colorResource(R.color.bg_dark_blue_2),
-                            colorResource(R.color.bg_dark_blue_3)
-                        )
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        colorResource(R.color.bg_dark_blue_1),
+                        colorResource(R.color.bg_dark_blue_2),
+                        colorResource(R.color.bg_dark_blue_3)
                     )
                 )
-                .border(width = 3.dp, color = colorResource(R.color.border_cyan)),
-            contentAlignment = Alignment.TopStart
+            )
+            .border(3.dp, colorResource(R.color.border_cyan))
+    ) {
+        OsdHeader(title = stringResource(R.string.auto_scan))
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 14.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ScanParam("INSAT 4B", "", Modifier.weight(1f))
+                ScanParam("TP", scan.tpNum.toString(), Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ScanParam("LNB Freq", viewModel.appSettings.value.lnbFreq, Modifier.weight(1f))
+                ScanParam("Symbol Rate", scan.symbolRate, Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ScanParam("Trans Freq", scan.transFreq, Modifier.weight(1f))
+                ScanParam("Polarity", scan.polarity, Modifier.weight(1f))
+            }
+
+            // Progress
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Header
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.105f)
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    colorResource(R.color.border_cyan_light),
-                                    colorResource(R.color.border_blue),
-                                    colorResource(R.color.bg_blue_12),
-                                    colorResource(R.color.bg_blue_13)
-                                )
-                            )
-                        )
-                        .border(bottom = BorderStroke(2.dp, colorResource(R.color.border_cyan_lighter))),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(22.dp)
-                                .background(colorResource(R.color.bg_blue_12))
-                                .clip(CircleShape)
-                                .padding(4.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("➜", fontSize = 12.sp, color = colorResource(R.color.border_cyan_light), fontWeight = FontWeight.Bold)
-                        }
-                        Text(
-                            text = stringResource(R.string.auto_scan),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = colorResource(R.color.text_dark_blue),
-                            letterSpacing = 1.0.sp
-                        )
-                    }
-                }
-
-                // Top Grid - Scan Parameters
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        ScanParamBox(label = "INSAT 4B", value = "")
-                        ScanParamBox(label = "TP", value = scanProgress.tpNum.toString())
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        ScanParamBox(label = "LNB Freq", value = scanProgress.transFreq)
-                        ScanParamBox(label = "Symbol Rate", value = scanProgress.symbolRate)
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        ScanParamBox(label = "Trans Freq", value = scanProgress.transFreq)
-                        ScanParamBox(label = "Polarity", value = scanProgress.polarity)
-                    }
-                }
-
-                // Progress Bar
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .weight(1f)
+                        .height(16.dp)
+                        .background(colorResource(R.color.scan_bar_bg), RoundedCornerShape(3.dp))
+                        .border(1.dp, colorResource(R.color.scan_bar_border), RoundedCornerShape(3.dp))
                 ) {
                     Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .height(16.dp)
-                            .background(colorResource(R.color.scan_bar_bg))
-                            .border(width = 1.5.dp, color = colorResource(R.color.scan_bar_border))
-                            .clip(RoundedCornerShape(3.dp))
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .width("${scanProgress.progress}%")
-                                .background(
-                                    Brush.verticalGradient(
-                                        colors = listOf(
-                                            colorResource(R.color.gradient_yellow_start),
-                                            colorResource(R.color.gradient_yellow_end)
-                                        )
+                            .fillMaxHeight()
+                            .fillMaxWidth(scan.progress.coerceIn(0, 100) / 100f)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        colorResource(R.color.gradient_yellow_start),
+                                        colorResource(R.color.gradient_yellow_end)
                                     )
-                                )
-                                .clip(RoundedCornerShape(3.dp))
-                                .border(end = BorderStroke(2.dp, Color.White))
-                        )
-                    }
-                    Text(
-                        text = "${scanProgress.progress}%",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        modifier = Modifier.width(48.dp).padding(start = 12.dp)
+                                ),
+                                RoundedCornerShape(3.dp)
+                            )
                     )
                 }
-
-                // Channel Lists Grid
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // TV Channel List Column
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(18.dp, 14.dp)
-                                    .border(width = 2.dp, color = Color.White)
-                            ) {
-                                // TV icon - simple representation
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Transparent)
-                                )
-                            }
-                            Text(
-                                text = stringResource(R.string.tv_channel_list),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(colorResource(R.color.bg_radial_2))
-                                .border(width = 1.5.dp, color = colorResource(R.color.bg_blue_10))
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                // Simulated scanned channels
-                                repeat(6) { i ->
-                                    val chNum = scanProgress.tvScanned - 5 + i
-                                    if (chNum > 0 && chNum <= scanProgress.tvScanned) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = "%03d".format(chNum),
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White,
-                                                modifier = Modifier.width(50.dp)
-                                            )
-                                            Text(
-                                                text = "CHANNEL ${chNum}",
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Radio Channel List Column
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(18.dp, 14.dp)
-                                    .border(width = 2.dp, color = Color.White)
-                                    .background(
-                                        Brush.radialGradient(
-                                            center = androidx.compose.ui.graphics.Center(0.7f, 0.5f),
-                                            radius = 20.dp,
-                                            colors = listOf(Color.White, Color.Transparent)
-                                        )
-                                    )
-                            )
-                            Text(
-                                text = stringResource(R.string.radio_channel_list),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(colorResource(R.color.bg_radial_2))
-                                .border(width = 1.5.dp, color = colorResource(R.color.bg_blue_10))
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                repeat(6) { i ->
-                                    val chNum = scanProgress.radioScanned - 5 + i
-                                    if (chNum > 0 && chNum <= scanProgress.radioScanned) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = "%03d".format(chNum),
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White,
-                                                modifier = Modifier.width(50.dp)
-                                            )
-                                            Text(
-                                                text = "RADIO ${chNum}",
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                Text(
+                    text = "${scan.progress}%",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.width(56.dp).padding(start = 10.dp)
+                )
             }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                ScanColumn(
+                    title = stringResource(R.string.tv_channel_list),
+                    scanned = scan.tvScanned,
+                    prefix = "CHANNEL",
+                    modifier = Modifier.weight(1f)
+                )
+                ScanColumn(
+                    title = stringResource(R.string.radio_channel_list),
+                    scanned = scan.radioScanned,
+                    prefix = "RADIO",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        OsdFooter {
+            FooterHint("Scanning transponders — press MENU to finish early")
         }
     }
 }
 
 @Composable
-fun ScanParamBox(label: String, value: String) {
-    Box(
-        modifier = Modifier
-            .weight(1f)
-            .padding(horizontal = 7.dp)
+private fun ScanParam(label: String, value: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(
+                    listOf(
                         colorResource(R.color.bg_blue_1),
                         colorResource(R.color.bg_blue_4)
                     )
-                )
+                ),
+                RoundedCornerShape(4.dp)
             )
-            .border(width = 1.5.dp, color = colorResource(R.color.bg_blue_5))
-            .clip(RoundedCornerShape(5.dp))
-            .padding(horizontal = 14.dp, vertical = 3.dp),
-        contentAlignment = Alignment.Center
+            .border(1.dp, colorResource(R.color.bg_blue_5), RoundedCornerShape(4.dp))
+            .padding(horizontal = 12.dp, vertical = 5.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = colorResource(R.color.text_cyan_light)
+        )
+        Text(
+            text = value,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = colorResource(R.color.text_cyan_light)
+        )
+    }
+}
+
+@Composable
+private fun ScanColumn(
+    title: String,
+    scanned: Int,
+    prefix: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxHeight(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = "$title ($scanned)",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(colorResource(R.color.bg_radial_2))
+                .border(1.dp, colorResource(R.color.bg_blue_10))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            Text(
-                text = label,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.text_cyan_light),
-                letterSpacing = 0.5.sp
-            )
-            Text(
-                text = value,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.text_cyan_light),
-                letterSpacing = 0.5.sp
-            )
+            val first = (scanned - 5).coerceAtLeast(1)
+            (first..scanned).takeLast(6).forEach { number ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "%03d".format(number),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.width(40.dp)
+                    )
+                    Text(
+                        text = "$prefix $number",
+                        fontSize = 11.sp,
+                        color = Color.White
+                    )
+                }
+            }
         }
     }
 }

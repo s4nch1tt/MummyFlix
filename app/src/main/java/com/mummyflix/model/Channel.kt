@@ -1,8 +1,5 @@
 package com.mummyflix.model
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -12,8 +9,8 @@ data class Channel(
     var fav: Boolean = false,
     var locked: Boolean = false
 ) {
-    var isPlaying: Boolean = false
-        private set
+    val displayName: String
+        get() = name.ifBlank { "Unknown Channel" }
 }
 
 @Serializable
@@ -31,34 +28,35 @@ enum class ViewState {
     LIST, MENU, SUBMENU, AUTOSCAN, FULLSCREEN
 }
 
-enum class SubMenuType(
-    val title: String,
-    val options: List<String>
-) {
-    PROGRAM_SETUP("Program Setup", listOf(
-        "1. Auto Scan",
-        "2. Add New Program",
-        "3. LNB Freq: 09750",
-        "4. Trans Freq: 10990",
-        "5. Back to Main Menu"
-    )),
-    PROGRAM_EDIT("Program Edit", listOf()),
-    PROGRAM_INFO("Program Info", listOf()),
-    LANGUAGE("Language Setting", listOf(
-        "Menu Language: < English >",
-        "Audio Language: < Hindi >",
-        "Subtitle: < OFF >",
-        "Back to Main Menu"
-    )),
-    SYSTEM_SETTING("System Setting", listOf(
-        "TV System: < PAL >",
-        "Screen Ratio: < Full (16:9) >",
-        "OSD Timeout: < 5 Sec >",
-        "Restore Factory Default",
-        "Back to Main Menu"
-    )),
-    GAME("Box Snake Game", listOf()),
-    SYSTEM_INFO("System Information", listOf())
+enum class SubMenuType(val title: String, val options: List<String>) {
+    PROGRAM_SETUP(
+        "Program Setup",
+        listOf("Auto Scan", "Add New Program", "LNB Frequency", "Transponder Frequency", "Back to Main Menu")
+    ),
+    PROGRAM_EDIT(
+        "Program Edit",
+        listOf("Toggle Favorite", "Toggle Lock", "Delete Current Channel", "Back to Main Menu")
+    ),
+    PROGRAM_INFO(
+        "Program Info",
+        listOf()
+    ),
+    LANGUAGE(
+        "Language Setting",
+        listOf("Menu Language", "Audio Language", "Subtitle", "Back to Main Menu")
+    ),
+    SYSTEM_SETTING(
+        "System Setting",
+        listOf("TV System", "Screen Ratio", "OSD Timeout", "Restore Factory Default", "Back to Main Menu")
+    ),
+    GAME(
+        "Box Snake Game",
+        listOf()
+    ),
+    SYSTEM_INFO(
+        "System Information",
+        listOf()
+    )
 }
 
 data class ScanProgress(
@@ -76,7 +74,8 @@ data class SnakeGameState(
     val direction: Point = Point(1, 0),
     val food: Point = Point(10, 6),
     val score: Int = 0,
-    val isRunning: Boolean = false
+    val isRunning: Boolean = false,
+    val isGameOver: Boolean = false
 )
 
 data class Point(val x: Int, val y: Int)

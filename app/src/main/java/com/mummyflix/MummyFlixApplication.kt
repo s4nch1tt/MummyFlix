@@ -4,21 +4,22 @@ import android.app.Application
 import com.mummyflix.preferences.MummyFlixPreferences
 import com.mummyflix.repository.ChannelRepository
 import com.mummyflix.viewmodel.MummyFlixViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 
 class MummyFlixApplication : Application() {
 
-    val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     lateinit var channelRepository: ChannelRepository
+        private set
+
     lateinit var preferences: MummyFlixPreferences
+        private set
+
     lateinit var viewModel: MummyFlixViewModel
+        private set
 
     override fun onCreate() {
         super.onCreate()
         channelRepository = ChannelRepository()
-        preferences = MummyFlixPreferences.apply { initialize(this@MummyFlixApplication) }
+        preferences = MummyFlixPreferences.getInstance(this)
         viewModel = MummyFlixViewModel(channelRepository, preferences)
     }
 }
