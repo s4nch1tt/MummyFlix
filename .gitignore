@@ -56,6 +56,12 @@ key.properties
 release/
 dist/
 
+# Node.js / semantic-release
+node_modules/
+.npm/
+npm-debug.log*
+yarn-error.log*
+
 # Misc
 *.log
 *.tmp

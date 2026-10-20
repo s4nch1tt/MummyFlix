@@ -1,0 +1,31 @@
+{
+  "name": "mummyflix",
+  "version": "1.0.0",
+  "private": true,
+  "description": "IPTV player for Android TV and Amazon Fire TV Stick, built with Jetpack Compose and Media3.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/s4nch1tt/MummyFlix.git"
+  },
+  "bugs": {
+    "url": "https://github.com/s4nch1tt/MummyFlix/issues"
+  },
+  "homepage": "https://github.com/s4nch1tt/MummyFlix#readme",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": "^22.14.0 || >=24.10.0"
+  },
+  "scripts": {
+    "release": "semantic-release",
+    "release:dry": "semantic-release --dry-run"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^11.0.1",
+    "@semantic-release/github": "^12.0.10",
+    "@semantic-release/release-notes-generator": "^14.1.1",
+    "conventional-changelog-conventionalcommits": "^9.3.1",
+    "semantic-release": "^25.0.9"
+  }
+}

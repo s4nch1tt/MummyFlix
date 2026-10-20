@@ -3,16 +3,22 @@ name: Build and Release
 on:
   push:
     branches: [ main, master ]
-    tags: [ 'v*' ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   JAVA_VERSION: '17'
+  NODE_VERSION: '22'
   GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true'
 
 jobs:
@@ -84,20 +90,46 @@ jobs:
           retention-days: 7
 
   release:
-    name: Publish GitHub Release
+    name: Semantic Release
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: >-
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
       - name: Download release APK
         uses: actions/download-artifact@v4
         with:
           name: MummyFlix-release
           path: dist
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Download debug APK
+        uses: actions/download-artifact@v4
         with:
-          files: dist/MummyFlix-release.apk
-          generate_release_notes: true
-          fail_on_unmatched_files: true
+          name: MummyFlix-debug
+          path: dist
+
+      - name: Install release tooling
+        run: npm ci
+
+      - name: Publish release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: npx semantic-release
