@@ -70,15 +70,20 @@ android {
             isDebuggable = true
         }
     }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.13"
+    }
 }
 
 dependencies {
     // Core Android
-    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("androidx.activity:activity-compose:1.9.3")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.activity:activity-compose:1.10.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.0")
 
     // Material Components - provides Material theme resources
     implementation("com.google.android.material:material:1.12.0")
@@ -86,7 +91,7 @@ dependencies {
     // Leanback - provides Theme.Leanback for Android TV
     implementation("androidx.leanback:leanback:1.2.0")
 
-    // Compose BOM
+    // Compose BOM - 2024.10.01 (latest stable)
     implementation(platform("androidx.compose:compose-bom:2024.10.01"))
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui")
@@ -99,7 +104,7 @@ dependencies {
     implementation("androidx.compose.material:material")
     implementation("androidx.compose.material:material-icons-extended")
 
-    // Media3 / ExoPlayer
+    // Media3 / ExoPlayer - latest 1.4.1
     implementation("androidx.media3:media3-exoplayer:1.4.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.4.1")
     implementation("androidx.media3:media3-ui:1.4.1")
@@ -109,7 +114,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.4")
 
     // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
     // Serialization for playlist parsing
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
@@ -117,9 +122,14 @@ dependencies {
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.7.0")
 
-    // Preferences
+    // Preferences DataStore - latest 1.1.2
     implementation("androidx.datastore:datastore-preferences:1.1.2")
     implementation("androidx.datastore:datastore-preferences-rxjava3:1.1.2")
+    implementation("androidx.datastore:datastore-rxjava3:1.1.2")
+
+    // RxJava 3
+    implementation("io.reactivex.rxjava3:rxjava:3.1.8")
+    implementation("io.reactivex.rxjava3:rxandroid:3.0.2")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
