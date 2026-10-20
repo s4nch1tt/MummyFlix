@@ -1,13 +1,12 @@
 package com.mummyflix.preferences
 
 import android.content.Context
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.PreferencesKeys
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.preferencesDataStore
+import androidx.datastore.preferences.PreferencesKeys
+import androidx.datastore.preferences.edit
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.datastore.rxjava3.RxDataStore
 import io.reactivex.rxjava3.core.Flowable
-import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.await
 
 object MummyFlixPreferences {
     private const val DATA_STORE_NAME = "mummyflix_preferences"
@@ -112,7 +111,7 @@ object MummyFlixPreferences {
 
     suspend fun toggleFavChannel(channelUrl: String) {
         getDataStore().updateDataAsync { prefs ->
-            val current = prefs[FAV_CHANNELS]?.toMutableSet() ?: mutableSetOf()
+            val current: MutableSet<String> = prefs[FAV_CHANNELS]?.toMutableSet() ?: mutableSetOf()
             if (current.contains(channelUrl)) {
                 current.remove(channelUrl)
             } else {
@@ -130,7 +129,7 @@ object MummyFlixPreferences {
 
     suspend fun toggleLockedChannel(channelUrl: String) {
         getDataStore().updateDataAsync { prefs ->
-            val current = prefs[LOCKED_CHANNELS]?.toMutableSet() ?: mutableSetOf()
+            val current: MutableSet<String> = prefs[LOCKED_CHANNELS]?.toMutableSet() ?: mutableSetOf()
             if (current.contains(channelUrl)) {
                 current.remove(channelUrl)
             } else {

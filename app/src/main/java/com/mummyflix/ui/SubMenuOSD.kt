@@ -1,11 +1,12 @@
 package com.mummyflix.ui
 
-import androidx.compose.animation.animateFloatAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,14 +14,13 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.FontStyle
+import androidx.compose.ui.text.style.FontStyle
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.percent
 import androidx.compose.ui.unit.sp
 import com.mummyflix.model.*
 import com.mummyflix.viewmodel.MummyFlixViewModel
@@ -59,7 +59,7 @@ fun SubMenuOSD(viewModel: MummyFlixViewModel) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(10.5.percent)
+                        .fillMaxHeight(0.105f)
                         .background(
                             Brush.horizontalGradient(
                                 colors = listOf(
@@ -81,7 +81,7 @@ fun SubMenuOSD(viewModel: MummyFlixViewModel) {
                             modifier = Modifier
                                 .size(22.dp)
                                 .background(colorResource(R.color.bg_blue_12))
-                                .clip(RoundedCornerShape(50.percent))
+                                .clip(CircleShape)
                                 .padding(4.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -107,7 +107,7 @@ fun SubMenuOSD(viewModel: MummyFlixViewModel) {
                     // Left Panel - Submenu Items
                     Column(
                         modifier = Modifier
-                            .width(40.5.percent)
+                            .fillMaxWidth(0.405f)
                             .fillMaxHeight()
                             .padding(right = 7.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -164,7 +164,7 @@ fun SubMenuOSD(viewModel: MummyFlixViewModel) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(12.5.percent)
+                        .fillMaxHeight(0.125f)
                         .minHeight(36.dp)
                         .background(
                             Brush.verticalGradient(
@@ -248,7 +248,7 @@ fun SubMenuOSD(viewModel: MummyFlixViewModel) {
                             modifier = Modifier
                                 .size(28.dp)
                                 .background(colorResource(R.color.text_dark_blue_2))
-                                .clip(RoundedCornerShape(50.percent))
+                                .clip(CircleShape)
                                 .clickable { viewModel.showBanner() },
                             contentAlignment = Alignment.Center
                         ) {
@@ -352,7 +352,7 @@ fun ProgramSetupBottomPanel() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .width(92.percent)
+                    .fillMaxWidth(0.92f)
                     .height(14.dp)
                     .background(
                         Brush.horizontalGradient(
@@ -379,7 +379,7 @@ fun ProgramSetupBottomPanel() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .width(78.percent)
+                    .fillMaxWidth(0.78f)
                     .height(14.dp)
                     .background(
                         Brush.horizontalGradient(
@@ -429,7 +429,7 @@ fun ProgramInfoBottomPanel(channel: Channel?) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .width(90.percent)
+                    .fillMaxWidth(0.90f)
                     .height(14.dp)
                     .background(
                         Brush.horizontalGradient(
@@ -456,7 +456,7 @@ fun ProgramInfoBottomPanel(channel: Channel?) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .width(76.percent)
+                    .fillMaxWidth(0.76f)
                     .height(14.dp)
                     .background(
                         Brush.horizontalGradient(

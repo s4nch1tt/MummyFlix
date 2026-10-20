@@ -5,6 +5,9 @@ import android.net.Uri
 import android.util.AttributeSet
 import android.view.View
 import android.widget.FrameLayout
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -16,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -68,9 +72,9 @@ fun VideoPlayerLayer(
 
     Box(
         modifier = modifier
-            .width(if (viewState == ViewState.FULLSCREEN || viewState == ViewState.AUTOSCAN) 0.dp else containerWidth.percent)
-            .height(if (viewState == ViewState.FULLSCREEN || viewState == ViewState.AUTOSCAN) 0.dp else containerHeight.percent)
-            .offset(x = containerLeft.percent, y = containerTop.percent)
+            .width(if (viewState == ViewState.FULLSCREEN || viewState == ViewState.AUTOSCAN) 0.dp else containerWidth.dp)
+            .height(if (viewState == ViewState.FULLSCREEN || viewState == ViewState.AUTOSCAN) 0.dp else containerHeight.dp)
+            .offset(x = containerLeft.dp, y = containerTop.dp)
             .background(Color.Black)
             .border(width = if (viewState == ViewState.FULLSCREEN) 0.dp else 3.dp, color = com.mummyflix.ui.colorResource(com.mummyflix.R.color.border_cyan_light))
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(0.dp)),
@@ -201,7 +205,7 @@ fun RadioModeOverlay(channelName: String) {
             .background(
                 Brush.radialGradient(
                     center = androidx.compose.ui.graphics.Center(0.5f, 0.5f),
-                    radius = 100.percent,
+                    radius = 100.dp,
                     colors = listOf(
                         colorResource(com.mummyflix.R.color.bg_radial_1),
                         colorResource(com.mummyflix.R.color.bg_radial_2),

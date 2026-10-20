@@ -1,11 +1,12 @@
 package com.mummyflix.ui
 
-import androidx.compose.animation.animateFloatAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,14 +14,13 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.FontStyle
+import androidx.compose.ui.text.style.FontStyle
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.percent
 import androidx.compose.ui.unit.sp
 import com.mummyflix.model.*
 import com.mummyflix.viewmodel.MummyFlixViewModel
@@ -48,7 +48,7 @@ fun WatermarkOverlay() {
     Box(
         modifier = Modifier
             .align(Alignment.BottomEnd)
-            .padding(bottom = 5.percent, end = 3.5.percent)
+            .padding(bottom = 30.dp, end = 20.dp)
             .graphicsLayer {
                 scaleX = 0.82f
                 scaleY = 0.82f
@@ -128,8 +128,8 @@ fun ChannelBanner(bannerState: BannerState) {
     Box(
         modifier = Modifier
             .align(Alignment.BottomStart)
-            .padding(bottom = 5.percent, start = 6.percent)
-            .width(82.percent)
+            .padding(bottom = 30.dp, start = 35.dp)
+            .fillMaxWidth(0.82f)
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
@@ -170,7 +170,7 @@ fun ChannelBanner(bannerState: BannerState) {
                         modifier = Modifier
                             .size(18.dp)
                             .background(colorResource(R.color.bg_blue_12))
-                            .clip(RoundedCornerShape(50.percent))
+                            .clip(CircleShape)
                             .padding(4.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -220,7 +220,7 @@ fun NumericInputOSD(buffer: String) {
     Box(
         modifier = Modifier
             .align(Alignment.TopEnd)
-            .padding(top = 5.percent, end = 4.percent)
+            .padding(top = 30.dp, end = 25.dp)
             .background(colorResource(R.color.text_dark_blue_2))
             .border(width = 2.dp, color = colorResource(R.color.secondary))
             .clip(RoundedCornerShape(4.dp))

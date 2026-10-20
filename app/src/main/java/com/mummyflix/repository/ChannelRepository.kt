@@ -1,7 +1,6 @@
 package com.mummyflix.repository
 
 import com.mummyflix.model.Channel
-import com.mummyflix.model.DEFAULT_RADIO_NAMES
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URL
@@ -10,6 +9,10 @@ class ChannelRepository {
     companion object {
         private const val PLAYLIST_URL = "https://iptv-org.github.io/iptv/countries/in.m3u"
         private const val ITEMS_PER_PAGE = 10
+        private val DEFAULT_RADIO_NAMES = listOf(
+            "Radio Mirchi", "Red FM", "Radio City", "Big FM", "Fever FM",
+            "Radio One", "Radio Nasha", "Radio Mango", "Radio Dhamaal", "Ishq FM"
+        )
     }
 
     suspend fun loadPlaylist(): Result<List<Channel>> = withContext(Dispatchers.IO) {
@@ -51,9 +54,9 @@ class ChannelRepository {
                 )
             } + matchedRadio.map { it.copy() }
 
-            Result.success(masterTvChannels)
+            Result.Success(masterTvChannels)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.Failure(e)
         }
     }
 

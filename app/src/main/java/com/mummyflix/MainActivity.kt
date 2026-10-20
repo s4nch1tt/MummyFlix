@@ -18,7 +18,6 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.toArgb
 import androidx.lifecycle.lifecycleScope
 import com.mummyflix.model.ViewState
 import com.mummyflix.ui.*
@@ -42,13 +41,13 @@ class MainActivity : ComponentActivity() {
 
     private fun enableEdgeToEdge() {
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        window.setNavigationBarColor(Color.Transparent.toArgb())
-        window.setStatusBarColor(Color.Transparent.toArgb())
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        window.setNavigationBarColor(android.graphics.Color.TRANSPARENT)
+        window.setStatusBarColor(android.graphics.Color.TRANSPARENT)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

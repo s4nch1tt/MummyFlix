@@ -1,12 +1,13 @@
 package com.mummyflix.ui
 
-import androidx.compose.animation.animateFloatAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -14,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.drawRect
@@ -72,7 +74,7 @@ fun ChannelListOSD(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(10.5.percent)
+                        .fillMaxHeight(0.105f)
                         .background(
                             Brush.horizontalGradient(
                                 colors = listOf(
@@ -94,7 +96,7 @@ fun ChannelListOSD(
                             modifier = Modifier
                                 .size(22.dp)
                                 .background(colorResource(R.color.bg_blue_12))
-                                .clip(RoundedCornerShape(50.percent))
+                                .clip(CircleShape)
                                 .padding(4.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -151,7 +153,7 @@ fun LeftChannelPanel(
 
     Box(
         modifier = Modifier
-            .width(40.5.percent)
+            .fillMaxWidth(0.405f)
             .fillMaxHeight()
             .padding(right = 7.dp),
         contentAlignment = Alignment.TopStart
@@ -308,11 +310,11 @@ fun RightPreviewPanel(viewModel: MummyFlixViewModel) {
                     .background(
                         Brush.radialGradient(
                             center = androidx.compose.ui.graphics.Center(0.5f, 0.5f),
-                            radius = 50.percent,
+                            radius = 10.dp,
                             colors = listOf(colorResource(R.color.wave_green), Color.Rgb(0x1b, 0x43, 0x32))
                         )
                     )
-                    .clip(RoundedCornerShape(50.percent))
+                    .clip(CircleShape)
                     .border(width = 1.dp, color = Color.Rgb(0x08, 0x1c, 0x15))
             )
         }
@@ -348,7 +350,7 @@ fun FooterKeyHints(viewModel: MummyFlixViewModel) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(12.5.percent)
+            .fillMaxHeight(0.125f)
             .minHeight(36.dp)
             .background(
                 Brush.verticalGradient(
@@ -430,7 +432,7 @@ fun FooterKeyHints(viewModel: MummyFlixViewModel) {
                 modifier = Modifier
                     .size(28.dp)
                     .background(colorResource(R.color.text_dark_blue_2))
-                    .clip(RoundedCornerShape(50.percent))
+                    .clip(CircleShape)
                     .clickable { viewModel.showBanner() },
                 contentAlignment = Alignment.Center
             ) {
