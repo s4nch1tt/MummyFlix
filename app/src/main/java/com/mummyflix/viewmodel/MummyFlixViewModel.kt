@@ -96,6 +96,10 @@ class MummyFlixViewModel(
     private val _exitRequested = mutableStateOf(false)
     val exitRequested: State<Boolean> = _exitRequested
 
+    // Focus area: 0 = main content (list/menu), 1 = footer
+    val focusArea: State<Int>
+        get() = mutableStateOf(if (_footerIndex.value != null) 1 else 0)
+
     private val _keypad = mutableStateOf(KeypadState())
     val keypad: State<KeypadState> = _keypad
 
