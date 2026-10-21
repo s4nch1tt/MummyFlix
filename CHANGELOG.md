@@ -2,6 +2,12 @@
 
 All notable changes to MummyFlix are documented in this file. This file is generated automatically by [semantic-release](https://github.com/semantic-release/semantic-release) from [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [1.3.0](https://github.com/s4nch1tt/MummyFlix/compare/v1.2.0...v1.3.0) (2026-10-21)
+
+### Features
+
+* **ui:** align right panel with reference and expose channel keypad ([6a9adb1](https://github.com/s4nch1tt/MummyFlix/commit/6a9adb1f367889182825cd38e72d3313a027d033))
+
 ## [1.2.0](https://github.com/s4nch1tt/MummyFlix/compare/v1.1.0...v1.2.0) (2026-10-21)
 
 ### Features
