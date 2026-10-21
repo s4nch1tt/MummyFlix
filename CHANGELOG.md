@@ -2,6 +2,12 @@
 
 All notable changes to MummyFlix are documented in this file. This file is generated automatically by [semantic-release](https://github.com/semantic-release/semantic-release) from [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [1.3.1](https://github.com/s4nch1tt/MummyFlix/compare/v1.3.0...v1.3.1) (2026-10-21)
+
+### Bug Fixes
+
+* **ui:** open Language, Game and System Info submenus ([6a35653](https://github.com/s4nch1tt/MummyFlix/commit/6a356538785f3ba489961a98c914ba44421bfcd2))
+
 ## [1.3.0](https://github.com/s4nch1tt/MummyFlix/compare/v1.2.0...v1.3.0) (2026-10-21)
 
 ### Features
