@@ -171,7 +171,7 @@ fun SubMenuBody(viewModel: MummyFlixViewModel, geo: OsdGeometry) {
             transponder = settings.transponder
         )
 
-        OptionPanelShell(title = subMenu.title, geo = geo) {
+        OptionPanelShell(title = subMenu.panelTitle, geo = geo) {
             SubMenuContent(viewModel = viewModel, subMenu = subMenu)
         }
     }

@@ -28,32 +28,39 @@ enum class ViewState {
     LIST, MENU, SUBMENU, AUTOSCAN, FULLSCREEN
 }
 
-enum class SubMenuType(val title: String, val options: List<String>) {
+enum class SubMenuType(val title: String, val panelTitle: String, val options: List<String>) {
     PROGRAM_SETUP(
+        "Program Setup",
         "Program Setup",
         listOf("Auto Scan", "Add New Program", "LNB Frequency", "Transponder Frequency", "Back to Main Menu")
     ),
     PROGRAM_EDIT(
         "Program Edit",
+        "Program Edit",
         listOf("Toggle Favorite", "Toggle Lock", "Delete Current Channel", "Back to Main Menu")
     ),
     PROGRAM_INFO(
         "Program Info",
+        "Program Info",
         listOf()
     ),
     LANGUAGE(
+        "Language",
         "Language Setting",
         listOf("Menu Language", "Audio Language", "Subtitle", "Back to Main Menu")
     ),
     SYSTEM_SETTING(
         "System Setting",
+        "System Setting",
         listOf("TV System", "Screen Ratio", "OSD Timeout", "Restore Factory Default", "Back to Main Menu")
     ),
     GAME(
+        "Game",
         "Box Snake Game",
         listOf()
     ),
     SYSTEM_INFO(
+        "System Info",
         "System Information",
         listOf()
     )
