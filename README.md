@@ -84,6 +84,7 @@ Everything is driven by a TV remote; no touch input is required.
 | `OK` / `Enter` | Play selected / enter fullscreen | Open item | Run action | Exit to channel list | Finish scan |
 | `BACK` | **Exit the app** | Back to the channel list | Back to the main menu | Exit to channel list | Finish scan |
 | `MENU` (`☰`, if present) | Open the main menu | Return to the channel list | Back to the main menu | Open the main menu | Finish scan |
+| Footer `123` | Open the numeric keypad | — | — | — | — |
 | `INFO` / `I` | Show channel banner | Show banner | Show banner | Show banner | Show banner |
 | `0`–`9` | Numeric channel entry | — | — | Numeric channel entry | — |
 | `Play/Pause` | Play / pause the stream | Play / pause the stream | Play / pause the stream | Play / pause the stream | — |
@@ -97,7 +98,7 @@ Everything is driven by a TV remote; no touch input is required.
 
 **Footer focus.** Pressing `►` on a channel name moves the highlight to the `MENU` group in the footer instead of closing the app. `◄` / `►` then move between footer actions, `OK` runs the highlighted action, and `▼` returns to the channel list. `BACK` still exits from the channel list.
 
-**Numeric entry.** Remotes and keyboards that send digit keys can type a channel number directly; the OSD shows the digits and tunes after a short pause. The Fire TV Stick HD remote has no digit keys, so use the channel list or the footer's page action instead.
+**Numeric entry.** Remotes and keyboards that send digit keys can type a channel number directly; the OSD shows the digits and tunes after a short pause. The Fire TV Stick HD remote has no digit keys, so use the footer's `123 Jump` keypad, the channel list, or the footer's page action instead.
 
 Snake controls: arrows steer the snake, `OK` restarts after game over.
 
@@ -414,7 +415,7 @@ The dependency set is intentionally pinned to the newest versions that are compa
 | **No Signal** on every channel | The public stream is offline or blocked in your region. Try another channel or update the playlist URL. |
 | **Playlist Error** | Check internet/DNS and open the M3U URL in a browser or with `curl`. |
 | App is missing from the TV launcher | It is listed under Apps → All apps (sideloaded). Manifest declares both Leanback and standard launcher categories. |
-| Remote `BACK` does not exit the app | `BACK` exits from the top-level channel list, even when the footer is highlighted. From a menu it goes one level up first. The footer's `BACK Exit` action also exits. |
+| Remote `BACK` does not exit the app | `BACK` exits from the top-level channel list, even when the footer is highlighted. From a menu it goes one level up first. |
 | Build fails with *requires compileSdk 37 / AGP 9.1* | A dependency was bumped past the pinned compatible set. Keep Compose BOM `2026.06.01`, `core-ktx` `1.18.0`, lifecycle `2.10.0`, or migrate the whole project to AGP 9.1+ and SDK 37. |
 | `local.properties` missing in CI | CI uses `android-actions/setup-android`; never commit `local.properties`. |
 | Semantic Release says *no release* | No `feat:` / `fix:` / `perf:` / breaking commit since the last tag. |
