@@ -2,6 +2,21 @@
 
 All notable changes to MummyFlix are documented in this file. This file is generated automatically by [semantic-release](https://github.com/semantic-release/semantic-release) from [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [1.1.0](https://github.com/s4nch1tt/MummyFlix/compare/v1.0.0...v1.1.0) (2026-10-21)
+
+### Features
+
+* **ui:** complete UI overhaul matching SR-Plus design with focus navigation fix ([ba37a2f](https://github.com/s4nch1tt/MummyFlix/commit/ba37a2ffa93c57b8af10592018d1c396c096882b))
+
+### Bug Fixes
+
+* **build:** add focusArea property to ViewModel for UI navigation ([0ea5623](https://github.com/s4nch1tt/MummyFlix/commit/0ea56234e93aa22decadeadcc64029e5914c7204))
+* **build:** add missing Compose imports for Modifier and Composable ([54cb2b0](https://github.com/s4nch1tt/MummyFlix/commit/54cb2b0f212c411c4d1cdd803c4a801755f8d512))
+* **build:** remove duplicate MummyFlixBranding composable from VideoPlayerLayer ([4bdb8e6](https://github.com/s4nch1tt/MummyFlix/commit/4bdb8e64dbdb69ede43c8158f45c783db9a892e0))
+* **build:** remove duplicate MummyFlixBranding, fix AutoScanOSD footer ([3a91ec2](https://github.com/s4nch1tt/MummyFlix/commit/3a91ec29e552666f1fa30acf60120819e613663f))
+* **build:** remove unused RetroOsd.kt and Branding.kt files with compilation errors ([325ae16](https://github.com/s4nch1tt/MummyFlix/commit/325ae168aaf72c898ab915be098a96e940a97346))
+* **build:** restore MainActivity to working version ([48c96be](https://github.com/s4nch1tt/MummyFlix/commit/48c96be4bef4d34b4a5c7ad44fa0877f2cd6b75d))
+
 ## 1.0.0 (2026-10-20)
 
 ### Features
