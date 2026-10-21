@@ -65,6 +65,7 @@
     <color name="gradient_cyan_mid">#90cbe0</color>
     <color name="gradient_cyan_end">#094f94</color>
     <color name="gradient_header_end">#0b5fb0</color>
+    <color name="footer_gradient_end">#68b0d4</color>
 
     <!-- Status colors -->
     <color name="signal_intensity_bg">#063060</color>

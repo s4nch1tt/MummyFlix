@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,36 +39,55 @@ import com.mummyflix.model.ViewState
 import com.mummyflix.viewmodel.MummyFlixViewModel
 
 /**
- * Single ExoPlayer instance that fills the screen. Every OSD screen draws its
- * panels on top of it, so switching between list/menu/fullscreen never
- * re-creates the player or interrupts playback.
+ * One ExoPlayer instance for the whole app. In receiver mode it is sized to the
+ * preview window; in fullscreen mode it fills the display. The Compose OSD is
+ * always drawn on top, so opening a menu never tears down the stream.
  */
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoPlayerLayer(viewModel: MummyFlixViewModel) {
+fun VideoPlayerLayer(
+    viewModel: MummyFlixViewModel,
+    modifier: Modifier = Modifier,
+    fullscreen: Boolean = false
+) {
     val videoUrl = viewModel.videoUrl.value
     val isRadioMode = viewModel.isRadioMode.value
     val viewState = viewModel.viewState.value
+    val isPaused = viewModel.isPaused.value
     val currentChannel = viewModel.activeList.value.getOrNull(viewModel.currentIndex.value)
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+    Box(modifier = modifier.background(Color.Black)) {
         AndroidVideoPlayer(
             videoUrl = videoUrl,
+            isPaused = isPaused,
             onVideoPlaying = viewModel::onVideoPlaying,
             onVideoError = viewModel::onVideoError
         )
 
         if (isRadioMode) {
-            RadioModeOverlay(channelName = currentChannel?.displayName ?: "")
+            RadioModeOverlay(
+                channelName = currentChannel?.displayName ?: "",
+                fullscreen = fullscreen
+            )
         }
 
         if (viewModel.showNoSignal.value && viewState != ViewState.AUTOSCAN) {
             NoSignalOverlay(isLoading = viewModel.isLoading.value)
         }
 
-        // MummyFlix branding watermark - only show when video is playing and not in radio mode
-        if (viewModel.isVideoPlaying.value && !viewModel.showNoSignal.value && !isRadioMode && viewState != ViewState.AUTOSCAN) {
-            MummyFlixBranding()
+        if (viewModel.isVideoPlaying.value &&
+            !viewModel.showNoSignal.value &&
+            !isRadioMode &&
+            viewState != ViewState.AUTOSCAN
+        ) {
+            PlayerWatermark(
+                fullscreen = fullscreen,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        if (isPaused && viewModel.isVideoPlaying.value && !isRadioMode && !viewModel.showNoSignal.value) {
+            PauseBadge(modifier = Modifier.align(Alignment.Center))
         }
     }
 }
@@ -78,6 +96,7 @@ fun VideoPlayerLayer(viewModel: MummyFlixViewModel) {
 @Composable
 fun AndroidVideoPlayer(
     videoUrl: String,
+    isPaused: Boolean,
     onVideoPlaying: () -> Unit,
     onVideoError: () -> Unit
 ) {
@@ -132,7 +151,12 @@ fun AndroidVideoPlayer(
 
         player.setMediaSource(mediaSource)
         player.prepare()
-        player.playWhenReady = true
+        player.playWhenReady = !isPaused
+    }
+
+    LaunchedEffect(isPaused, videoUrl) {
+        if (videoUrl.isBlank()) return@LaunchedEffect
+        if (isPaused) player.pause() else player.play()
     }
 
     AndroidView(
@@ -141,6 +165,7 @@ fun AndroidVideoPlayer(
                 this.player = player
                 useController = false
                 resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                setShutterBackgroundColor(android.graphics.Color.BLACK)
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
@@ -152,9 +177,17 @@ fun AndroidVideoPlayer(
 }
 
 @Composable
-fun RadioModeOverlay(channelName: String) {
+fun RadioModeOverlay(
+    channelName: String,
+    fullscreen: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    val markSize = if (fullscreen) 72.dp else 34.dp
+    val titleSize = if (fullscreen) 24.sp else 13.sp
+    val stationSize = if (fullscreen) 15.sp else 10.sp
+
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(
                 Brush.radialGradient(
@@ -169,40 +202,56 @@ fun RadioModeOverlay(channelName: String) {
     ) {
         Column(
             modifier = Modifier
-                .background(colorResource(R.color.bg_blue_9).copy(alpha = 0.88f), RoundedCornerShape(8.dp))
-                .padding(horizontal = 26.dp, vertical = 14.dp),
+                .background(
+                    colorResource(R.color.bg_blue_9).copy(alpha = 0.88f),
+                    RoundedCornerShape(8.dp)
+                )
+                .padding(
+                    horizontal = if (fullscreen) 30.dp else 18.dp,
+                    vertical = if (fullscreen) 18.dp else 10.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(if (fullscreen) 8.dp else 4.dp)
         ) {
+            MummyFlixMark(markSize)
             Text(
-                text = "♫ RADIO",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.secondary),
-                letterSpacing = 3.sp
+                text = stringResource(R.string.brand_wordmark),
+                fontSize = titleSize,
+                fontWeight = FontWeight.Black,
+                color = Color.White,
+                letterSpacing = if (fullscreen) 3.sp else 1.5.sp
             )
             Text(
-                text = channelName.take(28),
-                fontSize = 14.sp,
-                color = Color.White,
+                text = stringResource(R.string.radio_playing),
+                fontSize = stationSize,
+                fontWeight = FontWeight.Bold,
+                color = colorResource(R.color.brand_gold),
+                letterSpacing = if (fullscreen) 2.sp else 1.sp
+            )
+            Text(
+                text = channelName.take(if (fullscreen) 40 else 22),
+                fontSize = if (fullscreen) 14.sp else 9.sp,
+                color = colorResource(R.color.text_cyan_light),
                 textAlign = TextAlign.Center
             )
             Row(
-                modifier = Modifier.padding(top = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                modifier = Modifier.padding(top = if (fullscreen) 6.dp else 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(if (fullscreen) 5.dp else 3.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
-                repeat(7) { index -> AnimatedWaveBar(index) }
+                repeat(if (fullscreen) 7 else 5) { index ->
+                    AnimatedWaveBar(index = index, fullscreen = fullscreen)
+                }
             }
         }
     }
 }
 
 @Composable
-fun AnimatedWaveBar(index: Int) {
+fun AnimatedWaveBar(index: Int, fullscreen: Boolean = false) {
     val infinite = rememberInfiniteTransition(label = "wave")
-    val baseline = 6f
-    val peak = (18 + (index * 5) % 16).toFloat()
+    val baseline = if (fullscreen) 8f else 4f
+    val peak = (if (fullscreen) 22f else 12f) + (index * 4) % 12
     val height by infinite.animateFloat(
         initialValue = baseline,
         targetValue = peak,
@@ -218,7 +267,7 @@ fun AnimatedWaveBar(index: Int) {
 
     Box(
         modifier = Modifier
-            .width(6.dp)
+            .width(if (fullscreen) 6.dp else 3.dp)
             .height(height.dp)
             .background(
                 if (index % 2 == 0) colorResource(R.color.secondary)
@@ -229,30 +278,51 @@ fun AnimatedWaveBar(index: Int) {
 }
 
 @Composable
-fun NoSignalOverlay(isLoading: Boolean) {
-    Box(
-        modifier = Modifier
+fun NoSignalOverlay(isLoading: Boolean, modifier: Modifier = Modifier) {
+    BoxWithConstraints(
+        modifier = modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.75f)),
+            .background(Color.Black.copy(alpha = 0.35f)),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        val large = maxWidth > 700.dp
+        Box(
+            modifier = Modifier
+                .background(
+                    colorResource(R.color.border_cyan_dark),
+                    RoundedCornerShape(2.dp)
+                )
+                .padding(
+                    horizontal = if (large) 16.dp else 10.dp,
+                    vertical = if (large) 8.dp else 5.dp
+                )
+        ) {
             Text(
                 text = if (isLoading) stringResource(R.string.loading_channels)
                 else stringResource(R.string.no_signal),
-                fontSize = 18.sp,
+                fontSize = if (large) 20.sp else 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.text_cyan),
+                color = colorResource(R.color.text_dark_blue),
                 letterSpacing = 1.sp
             )
-            if (!isLoading) {
-                Text(
-                    text = "Press MENU to open the channel list",
-                    fontSize = 11.sp,
-                    color = colorResource(R.color.border_cyan_light),
-                    modifier = Modifier.padding(top = 6.dp)
-                )
-            }
         }
+    }
+}
+
+@Composable
+fun PauseBadge(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(50))
+            .padding(horizontal = 22.dp, vertical = 14.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "❚❚",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Black,
+            color = Color.White,
+            letterSpacing = 2.sp
+        )
     }
 }

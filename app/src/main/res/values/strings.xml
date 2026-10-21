@@ -4,7 +4,7 @@
     <string name="app_name_full">MummyFlix — Live TV &amp; Radio</string>
     <string name="brand_tagline">SATELLITE RECEIVER</string>
     <string name="brand_wordmark">MUMMYFLIX</string>
-    <string name="brand_signature">Crafted by Sanchit</string>
+    <string name="brand_signature">A MUMMYFLIX ORIGINAL</string>
     <string name="brand_version">MUMMYFLIX %1$s</string>
     <string name="menu_key">Menu</string>
     <string name="exit_app">Exit App</string>
@@ -44,7 +44,6 @@
     <string name="press_ok_to_toggle">Press OK to toggle Favorite, Lock or Delete channel</string>
     <string name="tap_or_press_to_switch">Tap or press ◄► / OK to switch language</string>
     <string name="use_ok_to_adjust">Use OK or ◄► to adjust video &amp; system settings</string>
-    <string name="developed_by_sanchit">Crafted by Sanchit</string>
     <string name="version">Version</string>
     <string name="satellite">Satellite</string>
     <string name="hw_version">H/W Version</string>
@@ -83,5 +82,5 @@
     <string name="symbol_rate">Symbol Rate</string>
     <string name="video_audio_pid">Video/Audio PID</string>
     <string name="ok_return">OK / Return</string>
-    <string name="radio_playing">AIR NATIONAL</string>
+    <string name="radio_playing">LIVE RADIO</string>
 </resources>

@@ -101,6 +101,7 @@ enum class FooterCommand {
     PAGE_FORWARD,
     ENTER,
     OPEN_MENU,
+    OPEN_KEYPAD,
     EXIT_APP,
     SHOW_INFO,
     CONFIRM,

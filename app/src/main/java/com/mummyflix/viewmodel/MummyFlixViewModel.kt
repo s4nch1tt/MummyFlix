@@ -80,6 +80,9 @@ class MummyFlixViewModel(
     private val _isVideoPlaying = mutableStateOf(false)
     val isVideoPlaying: State<Boolean> = _isVideoPlaying
 
+    private val _isPaused = mutableStateOf(false)
+    val isPaused: State<Boolean> = _isPaused
+
     private val _showNoSignal = mutableStateOf(false)
     val showNoSignal: State<Boolean> = _showNoSignal
 
@@ -95,10 +98,6 @@ class MummyFlixViewModel(
 
     private val _exitRequested = mutableStateOf(false)
     val exitRequested: State<Boolean> = _exitRequested
-
-    // Focus area: 0 = main content (list/menu), 1 = footer
-    val focusArea: State<Int>
-        get() = mutableStateOf(if (_footerIndex.value != null) 1 else 0)
 
     private val _keypad = mutableStateOf(KeypadState())
     val keypad: State<KeypadState> = _keypad
@@ -187,6 +186,7 @@ class MummyFlixViewModel(
         _currentIndex.value = index
         _videoUrl.value = list[index].url
         _isVideoPlaying.value = false
+        _isPaused.value = false
         _showNoSignal.value = list[index].url.isBlank()
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -202,6 +202,12 @@ class MummyFlixViewModel(
     fun onVideoError() {
         _isVideoPlaying.value = false
         _showNoSignal.value = true
+    }
+
+    /** Play/Pause on the Fire TV remote controls the stream, not the OSD. */
+    fun togglePlayPause() {
+        if (_videoUrl.value.isBlank()) return
+        _isPaused.value = !_isPaused.value
     }
 
     fun toggleFullscreen() {
@@ -355,7 +361,8 @@ class MummyFlixViewModel(
 
             ViewState.LIST -> {
                 _viewState.value = ViewState.MENU
-                _menuIndex.value = 2
+                // Match the reference OSD: open on Program Setup.
+                _menuIndex.value = 3
             }
 
             ViewState.MENU -> _viewState.value = ViewState.LIST
@@ -376,6 +383,15 @@ class MummyFlixViewModel(
             closeKeypad()
             return
         }
+
+        // From the top-level channel list BACK always leaves MummyFlix, even
+        // when the footer highlight is active. Use UP/DOWN to return to the
+        // channel rows without quitting.
+        if (_viewState.value == ViewState.LIST) {
+            requestExit()
+            return
+        }
+
         if (_footerIndex.value != null) {
             _footerIndex.value = null
             return
@@ -409,15 +425,13 @@ class MummyFlixViewModel(
             FooterGroup(listOf("▲", "▼"), "Select", FooterCommand.FOCUS_LIST),
             FooterGroup(listOf("◄", "►"), "Page", FooterCommand.PAGE_FORWARD),
             FooterGroup(listOf("OK"), "Enter", FooterCommand.ENTER),
-            FooterGroup(listOf("MENU"), "Menu", FooterCommand.OPEN_MENU),
-            FooterGroup(listOf("BACK"), "Exit", FooterCommand.EXIT_APP)
+            FooterGroup(listOf("MENU"), "Menu", FooterCommand.OPEN_MENU)
         )
 
         ViewState.MENU -> listOf(
             FooterGroup(listOf("▲", "▼"), "Move", FooterCommand.FOCUS_LIST),
             FooterGroup(listOf("OK"), "Confirm", FooterCommand.CONFIRM),
-            FooterGroup(listOf("MENU"), "Back", FooterCommand.BACK_LEVEL),
-            FooterGroup(listOf("BACK"), "Exit", FooterCommand.EXIT_APP)
+            FooterGroup(listOf("MENU"), "Return", FooterCommand.BACK_LEVEL)
         )
 
         ViewState.SUBMENU -> listOf(
@@ -428,7 +442,6 @@ class MummyFlixViewModel(
         )
 
         ViewState.AUTOSCAN -> listOf(
-            FooterGroup(listOf("OK"), "Done", FooterCommand.DONE_SCAN),
             FooterGroup(listOf("MENU"), "Cancel", FooterCommand.DONE_SCAN)
         )
 
@@ -458,6 +471,7 @@ class MummyFlixViewModel(
             }
 
             FooterCommand.OPEN_MENU -> handleMenuKey()
+            FooterCommand.OPEN_KEYPAD -> openKeypad()
             FooterCommand.EXIT_APP -> requestExit()
             FooterCommand.SHOW_INFO -> showBanner()
             FooterCommand.CONFIRM -> {
@@ -497,7 +511,12 @@ class MummyFlixViewModel(
         _keypad.value = state.copy(row = row, col = col)
     }
 
-    private fun activateKeypadCell() {
+    /** Touch/click support for the on-screen keypad. */
+    fun selectKeypadCell(row: Int, col: Int) {
+        _keypad.value = _keypad.value.copy(row = row.coerceIn(0, 3), col = col.coerceIn(0, 2))
+    }
+
+    fun activateKeypadCell() {
         val state = _keypad.value
         when {
             state.row == 3 && state.col == 0 -> {
@@ -565,8 +584,6 @@ class MummyFlixViewModel(
         when (option) {
             "TV List" -> switchList(radio = false)
             "Radio List" -> switchList(radio = true)
-            "Go to Channel" -> openKeypad()
-            "Exit App" -> requestExit()
             "Cancel" -> enterFullscreen()
             else -> {
                 val subMenu = SubMenuType.entries.firstOrNull { it.title == option }
@@ -599,8 +616,8 @@ class MummyFlixViewModel(
         val settings = _appSettings.value
         return subMenu.options.map { option ->
             when (option) {
-                "LNB Frequency" -> "$option: ${settings.lnbFreq}"
-                "Transponder Frequency" -> "$option: ${settings.transponder}"
+                "LNB Frequency" -> "LNB Freq: ${settings.lnbFreq}"
+                "Transponder Frequency" -> "Trans Freq: ${settings.transponder}"
                 "Menu Language" -> "$option: < ${settings.menuLang} >"
                 "Audio Language" -> "$option: < ${settings.audioLang} >"
                 "Subtitle" -> "$option: < OFF >"
@@ -953,13 +970,12 @@ class MummyFlixViewModel(
         const val PAGE_SIZE = 10
         const val GRID_WIDTH = 26
         const val GRID_HEIGHT = 16
-        private const val FOOTER_LIST_ENTRY = 2
+        private const val FOOTER_LIST_ENTRY = 3
         private const val FOOTER_MENU_ENTRY = 1
 
         private val MENU_ITEMS = listOf(
             "TV List",
             "Radio List",
-            "Go to Channel",
             "Program Setup",
             "Program Edit",
             "Program Info",
@@ -967,8 +983,7 @@ class MummyFlixViewModel(
             "System Setting",
             "Game",
             "System Info",
-            "Cancel",
-            "Exit App"
+            "Cancel"
         )
     }
 }

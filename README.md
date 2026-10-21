@@ -51,8 +51,10 @@ Everything is driven by a TV remote; no touch input is required.
 - **HLS live TV** playback through Media3 ExoPlayer with a single player instance reused across all screens.
 - **Radio mode** with an animated equalizer-style overlay for audio-only stations.
 - **Automatic fallback UI** — "No Signal" and loading screens when a stream or the playlist is unavailable.
-- **Channel banner** with channel number, name and type, auto-hidden after 3 seconds.
+- **Channel banner** with channel number, name and type, auto-hidden after 5 seconds (configurable to 3 / 5 / 10 seconds).
 - **Numeric channel entry** (up to 3 digits) with a 1.4-second auto-submit timeout.
+- **Direct numeric entry** for remotes and keyboards that expose digit keys; Fire TV users can surf the on-screen channel list with the D-pad.
+- **Broadcast-style MummyFlix watermark** in the player corner — subtle in windowed mode, larger in fullscreen.
 - **Immersive landscape UI** with hidden system bars.
 
 ### Channel management
@@ -66,7 +68,7 @@ Everything is driven by a TV remote; no touch input is required.
 - Program Setup, Program Edit, Program Info, Language, System Setting, Game and System Info menus.
 - Simulated **Auto Scan** screen with transponder, symbol rate, polarity, progress bar, and scanned TV/radio counters.
 - **Box Snake** game (26×16 grid, D-pad controls, score, restart on game over).
-- "Developed by Sanchit" watermark.
+- Consistent MummyFlix branding across the header, loading screen, system info and video watermark.
 
 > **Note:** Auto Scan is a visual simulation of a satellite scan; it does not tune real hardware. It animates to 100% and then restores the loaded playlist.
 
@@ -77,12 +79,25 @@ Everything is driven by a TV remote; no touch input is required.
 | Remote key | Channel list | Main menu | Sub menu | Fullscreen | Auto Scan |
 |---|---|---|---|---|---|
 | `▲` / `▼` | Previous / next channel | Move selection | Move selection (Snake: up / down) | Previous / next channel | — |
-| `◄` / `►` | Jump 10 channels | — | Change value (Snake: left / right) | — | — |
+| `►` | **Move highlight into the footer** | Move highlight into the footer | Change value (Snake: right) | `◄` / `►` are unused in playback | — |
+| `◄` | Jump back 10 channels | — | Change value (Snake: left) | — | — |
 | `OK` / `Enter` | Play selected / enter fullscreen | Open item | Run action | Exit to channel list | Finish scan |
-| `BACK` / `MENU` / `ESC` | Open main menu | Close menu | Back to main menu | Exit to channel list | Finish scan |
+| `BACK` | **Exit the app** | Back to the channel list | Back to the main menu | Exit to channel list | Finish scan |
+| `MENU` (`☰`, if present) | Open the main menu | Return to the channel list | Back to the main menu | Open the main menu | Finish scan |
 | `INFO` / `I` | Show channel banner | Show banner | Show banner | Show banner | Show banner |
 | `0`–`9` | Numeric channel entry | — | — | Numeric channel entry | — |
-| `Play/Pause` | Same as `OK` | Same as `OK` | Same as `OK` | Same as `OK` | — |
+| `Play/Pause` | Play / pause the stream | Play / pause the stream | Play / pause the stream | Play / pause the stream | — |
+| `Rewind` / `Fast Forward` | Page 10 channels back / forward | — | — | Page 10 channels back / forward | — |
+| `Channel +` / `Channel −` | Page 10 channels back / forward | — | — | Page 10 channels back / forward | — |
+| `Volume` / `Mute` | Handled by the TV, passed straight through | | | | |
+
+> The Amazon Fire TV Stick HD (3rd gen) remote has **D-pad, Select, Back, Home, Play/Pause, volume/power and Alexa** — no dedicated Menu, Info, numeric or channel keys. Use the on-screen footer for `MENU`, and use `BACK` to leave a menu or exit the app.
+
+**Leaving the app.** `BACK` on the channel list always exits MummyFlix, even when the footer is highlighted. The system Home button always works as well.
+
+**Footer focus.** Pressing `►` on a channel name moves the highlight to the `MENU` group in the footer instead of closing the app. `◄` / `►` then move between footer actions, `OK` runs the highlighted action, and `▼` returns to the channel list. `BACK` still exits from the channel list.
+
+**Numeric entry.** Remotes and keyboards that send digit keys can type a channel number directly; the OSD shows the digits and tunes after a short pause. The Fire TV Stick HD remote has no digit keys, so use the channel list or the footer's page action instead.
 
 Snake controls: arrows steer the snake, `OK` restarts after game over.
 
@@ -102,6 +117,8 @@ Snake controls: arrows steer the snake, `OK` restarts after game over.
 | **Game** | Box Snake |
 | **System Info** | Satellite name, hardware/software version, TV and radio channel counts |
 | **Cancel** | Return to fullscreen playback |
+
+The main menu intentionally mirrors the reference receiver's ten entries. Direct channel entry lives in the channel-list footer as `123 Jump` rather than as an extra menu row.
 
 Settings persisted with DataStore: menu language, audio language, TV system, aspect ratio, OSD timeout, LNB frequency, transponder, radio mode, last channel index, favorite URLs and locked URLs.
 
@@ -309,13 +326,10 @@ MummyFlix/
 │       │   │   ├── viewmodel/               # All UI state, navigation and game logic
 │       │   │   └── ui/
 │       │   │       ├── theme/Theme.kt       # Material 3 theme
-│       │   │       ├── VideoPlayerLayer.kt  # Single ExoPlayer + no-signal/radio UI
-│       │   │       ├── ChannelListOSD.kt    # Channel list and live preview
-│       │   │       ├── MainMenuOSD.kt       # Main menu
-│       │   │       ├── SubMenuOSD.kt        # Settings, info and Snake game
-│       │   │       ├── AutoScanOSD.kt       # Simulated scan screen
-│       │   │       ├── FullscreenAndOverlays.kt # Banner and numeric input
-│       │   │       └── Common.kt            # Shared OSD building blocks
+│       │   │       ├── RetroOsd.kt          # OSD geometry, header/footer, panels, preview chrome
+│       │   │       ├── ScreenBodies.kt      # Channel list, menus, auto scan, banner, keypad
+│       │   │       ├── Branding.kt          # Wordmark, watermark, brand plate and splash
+│       │   │       └── VideoPlayerLayer.kt  # Single ExoPlayer + no-signal/radio UI
 │       │   └── res/                         # Drawables, colors, strings, themes
 │       └── test/java/com/mummyflix/         # Unit tests
 ├── build.gradle.kts                # Plugin versions
@@ -400,7 +414,7 @@ The dependency set is intentionally pinned to the newest versions that are compa
 | **No Signal** on every channel | The public stream is offline or blocked in your region. Try another channel or update the playlist URL. |
 | **Playlist Error** | Check internet/DNS and open the M3U URL in a browser or with `curl`. |
 | App is missing from the TV launcher | It is listed under Apps → All apps (sideloaded). Manifest declares both Leanback and standard launcher categories. |
-| Remote `BACK` does not exit the app | By design: `BACK` / `MENU` / `ESC` navigate the OSD. Use the Home button to leave the app. |
+| Remote `BACK` does not exit the app | `BACK` exits from the top-level channel list, even when the footer is highlighted. From a menu it goes one level up first. The footer's `BACK Exit` action also exits. |
 | Build fails with *requires compileSdk 37 / AGP 9.1* | A dependency was bumped past the pinned compatible set. Keep Compose BOM `2026.06.01`, `core-ktx` `1.18.0`, lifecycle `2.10.0`, or migrate the whole project to AGP 9.1+ and SDK 37. |
 | `local.properties` missing in CI | CI uses `android-actions/setup-android`; never commit `local.properties`. |
 | Semantic Release says *no release* | No `feat:` / `fix:` / `perf:` / breaking commit since the last tag. |
@@ -428,9 +442,9 @@ Please keep changes consistent with the existing Compose OSD design and do not i
 
 ## Credits and license
 
-- **App:** MummyFlix — developed by **Sanchit**.
+- **App:** MummyFlix — a MummyFlix Original.
 - **Playlist:** [iptv-org](https://github.com/iptv-org/iptv) (public M3U index).
 - **Libraries:** Jetpack Compose, Media3/ExoPlayer, Kotlin Coroutines, DataStore, Kotlinx Serialization (Apache 2.0).
 - **Release automation:** [semantic-release](https://github.com/semantic-release/semantic-release), [Conventional Commits](https://www.conventionalcommits.org/).
 
-**License:** Proprietary — © Sanchit. All rights reserved. No part of this repository may be redistributed or used commercially without permission. All streamed content belongs to its respective owners; MummyFlix does not host or distribute any media.
+**License:** Proprietary — © MummyFlix. All rights reserved. No part of this repository may be redistributed or used commercially without permission. All streamed content belongs to its respective owners; MummyFlix does not host or distribute any media.
