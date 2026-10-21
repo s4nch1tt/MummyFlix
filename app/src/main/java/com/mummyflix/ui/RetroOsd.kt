@@ -68,7 +68,8 @@ data class OsdGeometry(val width: Dp, val height: Dp) {
 
     val leftPanelX: Dp = 10.dp
     val leftPanelY: Dp = bodyTop
-    val leftPanelWidth: Dp = width * 0.405f
+    /** 40.5% of the body content box, exactly like the reference `.left-panel`. */
+    val leftPanelWidth: Dp = (width - 20.dp) * 0.405f
     val leftPanelHeight: Dp = bodyHeight
 
     val rowHeight: Dp = (bodyHeight / 10f).coerceAtLeast(24.dp)
@@ -79,6 +80,9 @@ data class OsdGeometry(val width: Dp, val height: Dp) {
     val previewHeight: Dp = height * 0.52f
     val previewBottom: Dp = previewTop + previewHeight
 
+    /** The green strip / transponder sits after the left panel + 12dp body gap. */
+    val rightPanelLeft: Dp = leftPanelX + leftPanelWidth + 12.dp
+    val rightPanelWidth: Dp = (width - rightPanelLeft - 10.dp).coerceAtLeast(80.dp)
     val rightPanelTop: Dp = bodyTop
     val rightPanelHeight: Dp = bodyHeight
 
@@ -569,8 +573,8 @@ fun PreviewChrome(
 
     Column(
         modifier = modifier
-            .offset(geo.previewLeft, geo.rightPanelTop)
-            .width(geo.previewWidth)
+            .offset(geo.rightPanelLeft, geo.rightPanelTop)
+            .width(geo.rightPanelWidth)
             .height(geo.rightPanelHeight),
         verticalArrangement = Arrangement.Bottom
     ) {

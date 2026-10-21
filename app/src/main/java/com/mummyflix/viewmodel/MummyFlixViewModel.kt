@@ -425,7 +425,8 @@ class MummyFlixViewModel(
             FooterGroup(listOf("▲", "▼"), "Select", FooterCommand.FOCUS_LIST),
             FooterGroup(listOf("◄", "►"), "Page", FooterCommand.PAGE_FORWARD),
             FooterGroup(listOf("OK"), "Enter", FooterCommand.ENTER),
-            FooterGroup(listOf("MENU"), "Menu", FooterCommand.OPEN_MENU)
+            FooterGroup(listOf("MENU"), "Menu", FooterCommand.OPEN_MENU),
+            FooterGroup(listOf("123"), "Jump", FooterCommand.OPEN_KEYPAD)
         )
 
         ViewState.MENU -> listOf(

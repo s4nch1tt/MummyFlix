@@ -9,6 +9,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -282,18 +283,16 @@ fun NoSignalOverlay(isLoading: Boolean, modifier: Modifier = Modifier) {
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.35f)),
+            .background(Color.Black.copy(alpha = 0.20f)),
         contentAlignment = Alignment.Center
     ) {
         val large = maxWidth > 700.dp
         Box(
             modifier = Modifier
-                .background(
-                    colorResource(R.color.border_cyan_dark),
-                    RoundedCornerShape(2.dp)
-                )
+                .background(colorResource(R.color.no_signal_bg))
+                .border(2.dp, colorResource(R.color.border_cyan_light))
                 .padding(
-                    horizontal = if (large) 16.dp else 10.dp,
+                    horizontal = if (large) 32.dp else 14.dp,
                     vertical = if (large) 8.dp else 5.dp
                 )
         ) {
@@ -302,7 +301,7 @@ fun NoSignalOverlay(isLoading: Boolean, modifier: Modifier = Modifier) {
                 else stringResource(R.string.no_signal),
                 fontSize = if (large) 20.sp else 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.text_dark_blue),
+                color = colorResource(R.color.bg_blue_15),
                 letterSpacing = 1.sp
             )
         }
