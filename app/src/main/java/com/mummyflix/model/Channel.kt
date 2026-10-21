@@ -90,3 +90,38 @@ data class BannerState(
     var channelName: String = "",
     var channelType: String = "TV Channel"
 )
+
+/**
+ * The footer is a real, focusable part of the remote experience: pressing
+ * RIGHT on the channel list moves the highlight into this bar instead of
+ * doing nothing (or bouncing the user out of the app).
+ */
+enum class FooterCommand {
+    FOCUS_LIST,
+    PAGE_FORWARD,
+    ENTER,
+    OPEN_MENU,
+    EXIT_APP,
+    SHOW_INFO,
+    CONFIRM,
+    BACK_LEVEL,
+    DONE_SCAN,
+    CHANGE_VALUE
+}
+
+data class FooterGroup(
+    val keys: List<String>,
+    val label: String,
+    val command: FooterCommand
+)
+
+/**
+ * On-screen numeric pad. Fire TV remotes have no digit keys, so the receiver
+ * provides a D-pad driven keypad for direct channel entry.
+ */
+data class KeypadState(
+    val isVisible: Boolean = false,
+    val buffer: String = "",
+    val row: Int = 0,
+    val col: Int = 0
+)

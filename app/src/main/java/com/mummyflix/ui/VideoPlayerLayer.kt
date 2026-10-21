@@ -257,31 +257,3 @@ fun NoSignalOverlay(isLoading: Boolean) {
     }
 }
 
-@Composable
-fun MummyFlixBranding() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
-        Column(
-            modifier = Modifier.padding(bottom = 34.dp, end = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "MUMMY",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                fontStyle = FontStyle.Italic,
-                color = Color.White.copy(alpha = 0.9f),
-                letterSpacing = 1.5.sp
-            )
-            Text(
-                text = "FLIX",
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Black,
-                color = colorResource(R.color.watermark_orange),
-                letterSpacing = 2.5.sp,
-                modifier = Modifier
-                    .background(Color.White.copy(alpha = 0.85f), RoundedCornerShape(2.dp))
-                    .padding(horizontal = 4.dp, vertical = 1.dp)
-            )
-        }
-    }
-}

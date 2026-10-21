@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MummyFlix</string>
-    <string name="app_name_full">MummyFlix - Developed by Sanchit</string>
+    <string name="app_name_full">MummyFlix — Live TV &amp; Radio</string>
+    <string name="brand_tagline">SATELLITE RECEIVER</string>
+    <string name="brand_wordmark">MUMMYFLIX</string>
+    <string name="brand_signature">Crafted by Sanchit</string>
+    <string name="brand_version">MUMMYFLIX %1$s</string>
+    <string name="menu_key">Menu</string>
+    <string name="exit_app">Exit App</string>
+    <string name="go_to_channel">Go to Channel</string>
+    <string name="goto_channel_title">GO TO CHANNEL</string>
+    <string name="keypad_delete">DEL</string>
+    <string name="keypad_go">GO</string>
+    <string name="press_back_to_exit">Press BACK to exit MummyFlix</string>
     <string name="tv_channel_list">TV Channel List</string>
     <string name="radio_channel_list">Radio Channel List</string>
     <string name="main_menu">Main Menu</string>
@@ -33,7 +44,7 @@
     <string name="press_ok_to_toggle">Press OK to toggle Favorite, Lock or Delete channel</string>
     <string name="tap_or_press_to_switch">Tap or press ◄► / OK to switch language</string>
     <string name="use_ok_to_adjust">Use OK or ◄► to adjust video &amp; system settings</string>
-    <string name="developed_by_sanchit">Developed by Sanchit</string>
+    <string name="developed_by_sanchit">Crafted by Sanchit</string>
     <string name="version">Version</string>
     <string name="satellite">Satellite</string>
     <string name="hw_version">H/W Version</string>

@@ -72,6 +72,14 @@
     <color name="scan_bar_bg">#063060</color>
     <color name="scan_bar_border">#1c6ec4</color>
 
+    <!-- MummyFlix brand -->
+    <color name="brand_navy">#101a3a</color>
+    <color name="brand_navy_light">#1b2a56</color>
+    <color name="brand_cyan">#3fe0e8</color>
+    <color name="brand_cyan_dim">#21a8b4</color>
+    <color name="brand_gold">#f5b942</color>
+    <color name="brand_gold_dark">#d99a1f</color>
+
     <!-- Watermark -->
     <color name="watermark_orange">#ff6b35</color>
     <color name="watermark_yellow">#f5e625</color>
