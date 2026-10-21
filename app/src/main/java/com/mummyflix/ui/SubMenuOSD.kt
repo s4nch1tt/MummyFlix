@@ -3,16 +3,24 @@ package com.mummyflix.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
@@ -20,243 +28,163 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mummyflix.BuildConfig
 import com.mummyflix.R
-import com.mummyflix.model.Channel
 import com.mummyflix.model.SnakeGameState
 import com.mummyflix.model.SubMenuType
 import com.mummyflix.viewmodel.MummyFlixViewModel
 
+/**
+ * Sub-menu body: the main menu stays on the left (so UP/DOWN keeps working)
+ * while the selected panel opens as a blue option modal on the right.
+ */
 @Composable
-fun SubMenuOSD(viewModel: MummyFlixViewModel) {
+fun SubMenuBody(viewModel: MummyFlixViewModel, geo: OsdGeometry) {
     val subMenu = viewModel.activeSubMenu.value ?: return
     val options = viewModel.currentSubMenuOptions()
-    val subMenuIndex = viewModel.subMenuIndex.value
-    val focusArea = viewModel.focusArea.value // 0 = options list, 1 = footer (for non-game), 2 = right panel (for settings with left/right)
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        OsdHeader(title = subMenu.title)
-
-        Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(0.42f)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                colorResource(R.color.bg_dark_blue_1),
-                                colorResource(R.color.bg_dark_blue_2),
-                                colorResource(R.color.bg_dark_blue_3)
-                            )
-                        )
-                    )
-                    .border(2.dp, colorResource(R.color.border_cyan))
-                    .padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                if (options.isEmpty()) {
-                    ScreenTitle(subMenu.title)
-                    Hint("Use the panel on the right. Press MENU or OK to return.")
-                } else {
-                    options.forEachIndexed { index, option ->
-                        val active = index == subMenuIndex && focusArea == 0
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                                .background(
-                                    if (active) {
-                                        Brush.horizontalGradient(
-                                            listOf(
-                                                colorResource(R.color.secondary),
-                                                colorResource(R.color.secondary_variant)
-                                            )
-                                        )
-                                    } else {
-                                        Brush.horizontalGradient(
-                                            listOf(
-                                                colorResource(R.color.bg_blue_1).copy(alpha = 0.6f),
-                                                colorResource(R.color.bg_blue_2).copy(alpha = 0.6f)
-                                            )
-                                        )
-                                    },
-                                    RoundedCornerShape(3.dp)
-                                )
-                                .border(
-                                    1.dp,
-                                    if (active) Color.White else colorResource(R.color.bg_blue_3),
-                                    RoundedCornerShape(3.dp)
-                                )
-                                .clickable { viewModel.selectSubMenuOption(index) },
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Text(
-                                text = option,
-                                fontSize = 12.sp,
-                                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                                color = if (active) Color.Black else colorResource(R.color.text_cyan),
-                                maxLines = 1,
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .padding(8.dp)
-            ) {
-                // Transparent window: the live video stays visible behind.
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .border(3.dp, colorResource(R.color.border_cyan_light))
-                )
-
-                SubMenuDetail(
-                    viewModel = viewModel,
-                    subMenu = subMenu,
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                )
-            }
-        }
-
-        OsdFooter(focusArea = focusArea, isGame = subMenu == SubMenuType.GAME) {
-            if (subMenu != SubMenuType.GAME) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    KeyBadge("▲", isFocused = focusArea == 1, onClick = { viewModel.moveSelection(-1) })
-                    KeyBadge("▼", isFocused = focusArea == 1, onClick = { viewModel.moveSelection(1) })
-                    FooterHint(stringResource(R.string.move), isFocused = focusArea == 1)
-                }
-                // For LANGUAGE and SYSTEM_SETTING, left/right changes values
-                if (subMenu == SubMenuType.LANGUAGE || subMenu == SubMenuType.SYSTEM_SETTING) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        KeyBadge("◄", isFocused = focusArea == 1, onClick = { viewModel.handleLeftRight(-1) })
-                        KeyBadge("►", isFocused = focusArea == 1, onClick = { viewModel.handleLeftRight(1) })
-                        FooterHint(stringResource(R.string.change), isFocused = focusArea == 1)
-                    }
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    KeyBadge("OK", isFocused = focusArea == 1, onClick = viewModel::handleOkKey)
-                    FooterHint(stringResource(R.string.select), isFocused = focusArea == 1)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    KeyBadge("MENU", isFocused = focusArea == 1, onClick = viewModel::handleMenuKey)
-                    FooterHint(stringResource(R.string.back), isFocused = focusArea == 1)
-                }
-                InfoCircle(onClick = viewModel::showBanner, isFocused = focusArea == 1)
-            } else {
-                FooterHint("ARROWS: move snake   OK: restart")
-            }
-        }
-    }
-}
-
-@Composable
-private fun SubMenuDetail(
-    viewModel: MummyFlixViewModel,
-    subMenu: SubMenuType,
-    modifier: Modifier = Modifier
-) {
+    val selected = viewModel.subMenuIndex.value
     val channel = viewModel.activeList.value.getOrNull(viewModel.currentIndex.value)
     val settings = viewModel.appSettings.value
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(Color.Black.copy(alpha = 0.78f))
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        when (subMenu) {
-            SubMenuType.PROGRAM_SETUP -> {
-                ScreenTitle("Scan / Satellite")
-                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    SignalBar(stringResource(R.string.signal_intensity), 92, Modifier.weight(1f))
-                    SignalBar(stringResource(R.string.signal_quality), 78, Modifier.weight(1f))
+    Box(modifier = Modifier.fillMaxSize()) {
+        MenuListPanel(
+            items = viewModel.menuItems,
+            selectedIndex = viewModel.menuIndex.value,
+            modifier = Modifier
+                .offset(geo.leftPanelX, geo.leftPanelY)
+                .width(geo.leftPanelWidth)
+                .height(geo.leftPanelHeight),
+            onClick = viewModel::selectMenuItem
+        )
+
+        OptionPanelShell(title = subMenu.title, geo = geo) {
+            when (subMenu) {
+                SubMenuType.PROGRAM_SETUP -> {
+                    OptionList(options, selected, viewModel::selectSubMenuOption)
+                    Spacer(Modifier.weight(1f))
+                    SignalBlock()
+                    PanelHint("LNB ${settings.lnbFreq}  •  TP ${settings.transponder}  •  ${settings.tvSystem}")
                 }
-                Hint("LNB ${settings.lnbFreq}  •  TP ${settings.transponder}  •  ${settings.tvSystem}")
-            }
 
-            SubMenuType.PROGRAM_EDIT -> {
-                ScreenTitle("Edit: ${channel?.displayName ?: "—"}")
-                Hint("Favorite: ${if (channel?.fav == true) "YES" else "NO"}   Locked: ${if (channel?.locked == true) "YES" else "NO"}")
-                Hint(stringResource(R.string.press_ok_to_toggle))
-            }
-
-            SubMenuType.PROGRAM_INFO -> {
-                ScreenTitle(channel?.displayName ?: "No channel")
-                InfoRow("Number", (viewModel.currentIndex.value + 1).toString())
-                InfoRow("Type", if (viewModel.isRadioMode.value) "Radio" else "TV")
-                InfoRow("Frequency", "${settings.transponder} MHz")
-                InfoRow("Symbol Rate", "28490")
-                InfoRow("Favorite", if (channel?.fav == true) "YES" else "NO")
-                InfoRow("Locked", if (channel?.locked == true) "YES" else "NO")
-                if (channel != null && channel.url.isNotBlank()) {
+                SubMenuType.PROGRAM_EDIT -> {
                     Text(
-                        text = channel.url,
-                        fontSize = 9.sp,
+                        text = channel?.displayName ?: "—",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        maxLines = 1,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    OptionList(options, selected, viewModel::selectSubMenuOption)
+                    Spacer(Modifier.weight(1f))
+                    PanelHint(stringResource(R.string.press_ok_to_toggle))
+                }
+
+                SubMenuType.PROGRAM_INFO -> {
+                    InfoRow("Channel", channel?.displayName ?: "—")
+                    InfoRow("Number", "%03d".format(viewModel.currentIndex.value + 1))
+                    InfoRow("Type", if (viewModel.isRadioMode.value) "Radio" else "TV")
+                    InfoRow("Downlink Freq", "${settings.transponder} MHz (H)")
+                    InfoRow("Symbol Rate", "28490 Ksps")
+                    InfoRow("Video/Audio PID", "5064 / 6064")
+                    InfoRow("Favorite", if (channel?.fav == true) "ON ♥" else "OFF")
+                    InfoRow("Lock", if (channel?.locked == true) "LOCKED" else "OFF")
+                    if (channel != null && channel.url.isNotBlank()) {
+                        Text(
+                            text = channel.url,
+                            fontSize = 9.sp,
+                            color = colorResource(R.color.border_cyan_light),
+                            maxLines = 1,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    SignalBlock()
+                }
+
+                SubMenuType.LANGUAGE -> {
+                    OptionList(options, selected, viewModel::selectSubMenuOption)
+                    Spacer(Modifier.weight(1f))
+                    PanelHint(stringResource(R.string.tap_or_press_to_switch))
+                }
+
+                SubMenuType.SYSTEM_SETTING -> {
+                    OptionList(options, selected, viewModel::selectSubMenuOption)
+                    Spacer(Modifier.weight(1f))
+                    PanelHint(stringResource(R.string.use_ok_to_adjust))
+                }
+
+                SubMenuType.GAME -> {
+                    SnakeBoard(state = viewModel.snakeGameState.value, modifier = Modifier.weight(1f))
+                    Text(
+                        text = stringResource(R.string.use_arrows_to_move),
+                        fontSize = 10.sp,
                         color = colorResource(R.color.border_cyan_light),
-                        maxLines = 1
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
                     )
                 }
-            }
 
-            SubMenuType.LANGUAGE -> {
-                ScreenTitle("Languages")
-                InfoRow("Menu Language", settings.menuLang)
-                InfoRow("Audio Language", settings.audioLang)
-                InfoRow("Subtitle", "OFF")
-                Hint(stringResource(R.string.tap_or_press_to_switch))
-            }
-
-            SubMenuType.SYSTEM_SETTING -> {
-                ScreenTitle("System")
-                InfoRow("TV System", settings.tvSystem)
-                InfoRow("Screen Ratio", settings.aspectRatio)
-                InfoRow("OSD Timeout", settings.osdTimeout)
-                Hint(stringResource(R.string.use_ok_to_adjust))
-            }
-
-            SubMenuType.GAME -> SnakeBoard(viewModel.snakeGameState.value)
-
-            SubMenuType.SYSTEM_INFO -> {
-                ScreenTitle("System Information")
-                InfoRow("Satellite", "INSAT 4B")
-                InfoRow("H/W Version", "GX6605S V1.2")
-                InfoRow("S/W Version", "3.0.4-IND")
-                InfoRow("TV Channels", viewModel.allChannels.value.size.toString())
-                InfoRow("Radio Channels", viewModel.radioChannels.value.size.toString())
-                InfoRow("Last Update", "2026-10-19")
+                SubMenuType.SYSTEM_INFO -> {
+                    BrandPlate(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.25f))
+                            .border(1.dp, colorResource(R.color.bg_blue_3))
+                            .padding(8.dp),
+                        showVersion = true
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    InfoRow("Satellite", "INSAT 4B")
+                    InfoRow("H/W Version", "GX6605S V1.2")
+                    InfoRow("S/W Version", "MUMMYFLIX ${BuildConfig.VERSION_NAME}")
+                    InfoRow("TV Channels", viewModel.allChannels.value.size.toString())
+                    InfoRow("Radio Channels", viewModel.radioChannels.value.size.toString())
+                    InfoRow("Last Update", "2026-10-21")
+                    Spacer(Modifier.weight(1f))
+                    PanelHint("Press OK or BACK to close")
+                }
             }
         }
-    }
-}
 
-@Composable
-private fun InfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = label, fontSize = 11.sp, color = colorResource(R.color.text_cyan))
-        Text(
-            text = value,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            textAlign = TextAlign.End
+        PreviewChrome(
+            geo = geo,
+            signal = viewModel.isVideoPlaying.value,
+            lnb = settings.lnbFreq,
+            transponder = settings.transponder
         )
     }
 }
 
 @Composable
-private fun SnakeBoard(state: SnakeGameState) {
+private fun OptionList(
+    options: List<String>,
+    selected: Int,
+    onSelect: (Int) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        options.forEachIndexed { index, option ->
+            OptionRow(
+                text = "${index + 1}. $option",
+                active = index == selected,
+                onClick = { onSelect(index) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun SignalBlock() {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        SignalBar(stringResource(R.string.signal_intensity), 92, Modifier.weight(1f))
+        SignalBar(stringResource(R.string.signal_quality), 78, Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun SnakeBoard(state: SnakeGameState, modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Row(
@@ -305,7 +233,7 @@ private fun SnakeBoard(state: SnakeGameState) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.7f)),
+                        .background(Color.Black.copy(alpha = 0.72f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -318,13 +246,5 @@ private fun SnakeBoard(state: SnakeGameState) {
                 }
             }
         }
-
-        Text(
-            text = stringResource(R.string.use_arrows_to_move),
-            fontSize = 10.sp,
-            color = colorResource(R.color.border_cyan_light),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }

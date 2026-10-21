@@ -9,18 +9,31 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,36 +53,64 @@ import com.mummyflix.model.ViewState
 import com.mummyflix.viewmodel.MummyFlixViewModel
 
 /**
- * Single ExoPlayer instance that fills the screen. Every OSD screen draws its
- * panels on top of it, so switching between list/menu/fullscreen never
- * re-creates the player or interrupts playback.
+ * One ExoPlayer instance for the whole app. It is placed inside the preview
+ * window in every OSD screen and expanded to the full display in fullscreen
+ * mode, so switching screens never interrupts playback.
  */
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoPlayerLayer(viewModel: MummyFlixViewModel) {
+fun VideoPlayerLayer(
+    viewModel: MummyFlixViewModel,
+    modifier: Modifier = Modifier,
+    fullscreen: Boolean = false
+) {
     val videoUrl = viewModel.videoUrl.value
     val isRadioMode = viewModel.isRadioMode.value
     val viewState = viewModel.viewState.value
     val currentChannel = viewModel.activeList.value.getOrNull(viewModel.currentIndex.value)
+    val settings = viewModel.appSettings.value
+    val isLoading = viewModel.isLoading.value
+    val noSignal = viewModel.showNoSignal.value
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+    val resizeMode = if (settings.aspectRatio.startsWith("Full")) {
+        AspectRatioFrameLayout.RESIZE_MODE_FILL
+    } else {
+        AspectRatioFrameLayout.RESIZE_MODE_FIT
+    }
+
+    Box(
+        modifier = modifier
+            .clipToBounds()
+            .background(Color.Black)
+    ) {
         AndroidVideoPlayer(
             videoUrl = videoUrl,
+            resizeMode = resizeMode,
             onVideoPlaying = viewModel::onVideoPlaying,
             onVideoError = viewModel::onVideoError
         )
 
         if (isRadioMode) {
-            RadioModeOverlay(channelName = currentChannel?.displayName ?: "")
+            RadioModeScreen(channelName = currentChannel?.displayName ?: "")
         }
 
-        if (viewModel.showNoSignal.value && viewState != ViewState.AUTOSCAN) {
-            NoSignalOverlay(isLoading = viewModel.isLoading.value)
+        when {
+            isLoading -> BrandSplash(
+                message = stringResource(R.string.loading_channels),
+                modifier = Modifier.fillMaxSize()
+            )
+
+            noSignal && viewState != ViewState.AUTOSCAN -> Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) { NoSignalBadge() }
         }
 
-        // MummyFlix branding watermark - only show when video is playing and not in radio mode
-        if (viewModel.isVideoPlaying.value && !viewModel.showNoSignal.value && !isRadioMode && viewState != ViewState.AUTOSCAN) {
-            MummyFlixBranding()
+        if (!isRadioMode && !noSignal && !isLoading && viewModel.isVideoPlaying.value) {
+            PlayerWatermark(
+                fullscreen = fullscreen,
+                modifier = Modifier.align(Alignment.BottomEnd)
+            )
         }
     }
 }
@@ -78,6 +119,7 @@ fun VideoPlayerLayer(viewModel: MummyFlixViewModel) {
 @Composable
 fun AndroidVideoPlayer(
     videoUrl: String,
+    resizeMode: Int,
     onVideoPlaying: () -> Unit,
     onVideoError: () -> Unit
 ) {
@@ -121,7 +163,7 @@ fun AndroidVideoPlayer(
         }
 
         val dataSourceFactory = DefaultHttpDataSource.Factory()
-            .setUserAgent("MummyFlix/1.0")
+            .setUserAgent("MummyFlix/${com.mummyflix.BuildConfig.VERSION_NAME}")
             .setConnectTimeoutMs(10_000)
             .setReadTimeoutMs(10_000)
             .setAllowCrossProtocolRedirects(true)
@@ -140,19 +182,23 @@ fun AndroidVideoPlayer(
             PlayerView(ctx).apply {
                 this.player = player
                 useController = false
-                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                this.resizeMode = resizeMode
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
             }
         },
+        update = { view ->
+            view.resizeMode = resizeMode
+        },
         modifier = Modifier.fillMaxSize()
     )
 }
 
+/** Retro set-top-box radio face, drawn inside the preview window. */
 @Composable
-fun RadioModeOverlay(channelName: String) {
+fun RadioModeScreen(channelName: String) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -228,32 +274,21 @@ fun AnimatedWaveBar(index: Int) {
     )
 }
 
+/** Small receiver-style "No Signal" placard, exactly like the reference OSD. */
 @Composable
-fun NoSignalOverlay(isLoading: Boolean) {
+fun NoSignalBadge() {
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.75f)),
-        contentAlignment = Alignment.Center
+            .background(colorResource(R.color.wave_blue), RoundedCornerShape(2.dp))
+            .border(2.dp, colorResource(R.color.border_cyan_light), RoundedCornerShape(2.dp))
+            .padding(horizontal = 30.dp, vertical = 8.dp)
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = if (isLoading) stringResource(R.string.loading_channels)
-                else stringResource(R.string.no_signal),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.text_cyan),
-                letterSpacing = 1.sp
-            )
-            if (!isLoading) {
-                Text(
-                    text = "Press MENU to open the channel list",
-                    fontSize = 11.sp,
-                    color = colorResource(R.color.border_cyan_light),
-                    modifier = Modifier.padding(top = 6.dp)
-                )
-            }
-        }
+        Text(
+            text = stringResource(R.string.no_signal),
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+            color = colorResource(R.color.bg_blue_15),
+            letterSpacing = 1.sp
+        )
     }
 }
-
