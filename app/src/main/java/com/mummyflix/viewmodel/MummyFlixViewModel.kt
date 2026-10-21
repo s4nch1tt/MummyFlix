@@ -89,6 +89,10 @@ class MummyFlixViewModel(
     private val _appSettings = mutableStateOf(AppSettings())
     val appSettings: State<AppSettings> = _appSettings
 
+    // Focus area: 0 = main content (list/menu), 1 = footer
+    private val _focusArea = mutableStateOf(0)
+    val focusArea: State<Int> = _focusArea
+
     private var bannerJob: Job? = null
     private var numericJob: Job? = null
     private var snakeJob: Job? = null
@@ -194,6 +198,10 @@ class MummyFlixViewModel(
     fun moveSelection(delta: Int) {
         when (_viewState.value) {
             ViewState.LIST -> {
+                if (_focusArea.value == 1) {
+                    // If in footer, move to first footer item (handled by footer focus)
+                    return
+                }
                 val list = _activeList.value
                 if (list.isEmpty()) return
                 val next = (_currentIndex.value + delta + list.size) % list.size
@@ -201,12 +209,14 @@ class MummyFlixViewModel(
             }
 
             ViewState.MENU -> {
+                if (_focusArea.value == 1) return
                 _menuIndex.value = (_menuIndex.value + delta + MENU_ITEMS.size) % MENU_ITEMS.size
             }
 
             ViewState.SUBMENU -> when (_activeSubMenu.value) {
                 SubMenuType.GAME -> changeSnakeDirection(if (delta < 0) Point(0, -1) else Point(0, 1))
                 else -> {
+                    if (_focusArea.value == 1) return
                     val count = currentSubMenuOptions().size
                     if (count > 0) {
                         _subMenuIndex.value = (_subMenuIndex.value + delta + count) % count
@@ -229,33 +239,78 @@ class MummyFlixViewModel(
     fun handleLeftRight(dir: Int) {
         when (_viewState.value) {
             ViewState.LIST -> {
-                val list = _activeList.value
-                if (list.isNotEmpty()) {
-                    playChannel((_currentIndex.value + dir * PAGE_SIZE).coerceIn(0, list.lastIndex))
+                if (_focusArea.value == 0 && dir > 0) {
+                    // Move focus from channel list to footer
+                    _focusArea.value = 1
+                } else if (_focusArea.value == 1 && dir < 0) {
+                    // Move focus from footer back to channel list
+                    _focusArea.value = 0
+                } else if (_focusArea.value == 0) {
+                    // In channel list, left/right does page up/down
+                    val list = _activeList.value
+                    if (list.isNotEmpty()) {
+                        playChannel((_currentIndex.value + dir * PAGE_SIZE).coerceIn(0, list.lastIndex))
+                    }
+                }
+            }
+
+            ViewState.MENU -> {
+                if (_focusArea.value == 0 && dir > 0) {
+                    // Move focus from menu list to footer
+                    _focusArea.value = 1
+                } else if (_focusArea.value == 1 && dir < 0) {
+                    // Move focus from footer back to menu list
+                    _focusArea.value = 0
                 }
             }
 
             ViewState.SUBMENU -> when (_activeSubMenu.value) {
                 SubMenuType.GAME -> changeSnakeDirection(if (dir < 0) Point(-1, 0) else Point(1, 0))
-                SubMenuType.LANGUAGE, SubMenuType.SYSTEM_SETTING -> handleOkKey()
-                else -> Unit
+                SubMenuType.LANGUAGE, SubMenuType.SYSTEM_SETTING -> {
+                    // In settings submenus, left/right changes values
+                    if (_focusArea.value == 0) {
+                        handleOkKey()
+                    } else if (_focusArea.value == 1 && dir < 0) {
+                        _focusArea.value = 0
+                    }
+                }
+                else -> {
+                    if (_focusArea.value == 0 && dir > 0) {
+                        _focusArea.value = 1
+                    } else if (_focusArea.value == 1 && dir < 0) {
+                        _focusArea.value = 0
+                    }
+                }
             }
 
             ViewState.AUTOSCAN -> Unit
-            else -> Unit
+            ViewState.FULLSCREEN -> Unit
         }
     }
 
     fun handleOkKey() {
         when (_viewState.value) {
             ViewState.LIST -> {
+                if (_focusArea.value == 1) {
+                    // OK in footer - depends on which item is focused (handled by footer click)
+                    return
+                }
                 if (_playingIndex.value != _currentIndex.value) playChannel(_currentIndex.value)
                 else enterFullscreen()
             }
 
-            ViewState.MENU -> openSelectedMenuOption(MENU_ITEMS[_menuIndex.value])
-            ViewState.SUBMENU -> handleSubMenuAction()
+            ViewState.MENU -> {
+                if (_focusArea.value == 1) return
+                openSelectedMenuOption(MENU_ITEMS[_menuIndex.value])
+            }
+
+            ViewState.SUBMENU -> {
+                if (_focusArea.value == 1) return
+                handleSubMenuAction()
+            }
+
             ViewState.FULLSCREEN -> exitFullscreen()
+
             ViewState.AUTOSCAN -> finalizeAutoScan()
         }
     }
@@ -263,21 +318,36 @@ class MummyFlixViewModel(
     fun handleMenuKey() {
         when (_viewState.value) {
             ViewState.AUTOSCAN -> finalizeAutoScan()
+
             ViewState.SUBMENU -> {
                 stopSnakeGame()
                 _viewState.value = ViewState.MENU
                 _activeSubMenu.value = null
+                _focusArea.value = 0
             }
 
             ViewState.LIST -> {
                 _viewState.value = ViewState.MENU
                 _menuIndex.value = 2
+                _focusArea.value = 0
             }
 
-            ViewState.MENU -> _viewState.value = ViewState.LIST
+            ViewState.MENU -> {
+                if (_focusArea.value == 1) {
+                    // In footer, go back to list
+                    _focusArea.value = 0
+                } else {
+                    _viewState.value = ViewState.LIST
+                    _focusArea.value = 0
+                }
+            }
+
             ViewState.FULLSCREEN -> {
-                _viewState.value = ViewState.LIST
+                // From fullscreen, go to MENU (not LIST) so user can navigate to exit
+                _viewState.value = ViewState.MENU
+                _menuIndex.value = 10 // Cancel is at index 10
                 _bannerState.value = _bannerState.value.copy(isVisible = false)
+                _focusArea.value = 0
             }
         }
     }
@@ -328,6 +398,7 @@ class MummyFlixViewModel(
                     _activeSubMenu.value = subMenu
                     _subMenuIndex.value = 0
                     _viewState.value = ViewState.SUBMENU
+                    _focusArea.value = 0
                     if (subMenu == SubMenuType.GAME) startSnakeGame() else stopSnakeGame()
                 }
             }
@@ -340,6 +411,7 @@ class MummyFlixViewModel(
         _activeList.value = if (radio) _radioChannels.value else _allChannels.value
         _currentIndex.value = 0
         _viewState.value = ViewState.LIST
+        _focusArea.value = 0
         if (_activeList.value.isNotEmpty()) playChannel(0)
         viewModelScope.launch { preferences.setRadioMode(radio) }
     }
@@ -542,6 +614,7 @@ class MummyFlixViewModel(
     fun exitFullscreen() {
         _viewState.value = ViewState.LIST
         _bannerState.value = _bannerState.value.copy(isVisible = false)
+        _focusArea.value = 0
     }
 
     // ------------------------------------------------------------- auto scan
@@ -582,6 +655,7 @@ class MummyFlixViewModel(
         _activeList.value = if (_isRadioMode.value) _radioChannels.value else _allChannels.value
         _currentIndex.value = 0
         _viewState.value = ViewState.LIST
+        _focusArea.value = 0
         if (_activeList.value.isNotEmpty()) playChannel(0) else _showNoSignal.value = true
     }
 

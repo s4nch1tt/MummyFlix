@@ -24,6 +24,7 @@ import com.mummyflix.viewmodel.MummyFlixViewModel
 fun MainMenuOSD(viewModel: MummyFlixViewModel) {
     val menuItems = viewModel.menuItems
     val menuIndex = viewModel.menuIndex.value
+    val focusArea = viewModel.focusArea.value // 0 = menu list, 1 = footer
 
     Column(modifier = Modifier.fillMaxSize()) {
         OsdHeader(
@@ -53,7 +54,7 @@ fun MainMenuOSD(viewModel: MummyFlixViewModel) {
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 menuItems.forEachIndexed { index, item ->
-                    val active = index == menuIndex
+                    val active = index == menuIndex && focusArea == 0
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -82,15 +83,16 @@ fun MainMenuOSD(viewModel: MummyFlixViewModel) {
                                 RoundedCornerShape(3.dp)
                             )
                             .clickable { viewModel.selectMenuItem(index) },
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.CenterStart
                     ) {
                         Text(
                             text = "${index + 1}. $item",
                             fontSize = 13.sp,
                             fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                             color = if (active) Color.Black else colorResource(R.color.text_cyan),
-                            textAlign = TextAlign.Center,
-                            maxLines = 1
+                            textAlign = TextAlign.Start,
+                            maxLines = 1,
+                            modifier = Modifier.padding(horizontal = 8.dp)
                         )
                     }
                 }
@@ -144,21 +146,21 @@ fun MainMenuOSD(viewModel: MummyFlixViewModel) {
             }
         }
 
-        OsdFooter {
+        OsdFooter(focusArea = focusArea) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                KeyBadge("▲", onClick = { viewModel.moveSelection(-1) })
-                KeyBadge("▼", onClick = { viewModel.moveSelection(1) })
-                FooterHint(stringResource(R.string.move))
+                KeyBadge("▲", isFocused = focusArea == 1, onClick = { viewModel.moveSelection(-1) })
+                KeyBadge("▼", isFocused = focusArea == 1, onClick = { viewModel.moveSelection(1) })
+                FooterHint(stringResource(R.string.move), isFocused = focusArea == 1)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                KeyBadge("OK", onClick = viewModel::handleOkKey)
-                FooterHint(stringResource(R.string.confirm))
+                KeyBadge("OK", isFocused = focusArea == 1, onClick = viewModel::handleOkKey)
+                FooterHint(stringResource(R.string.confirm), isFocused = focusArea == 1)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                KeyBadge("MENU", onClick = viewModel::handleMenuKey)
-                FooterHint(stringResource(R.string.return_action))
+                KeyBadge("MENU", isFocused = focusArea == 1, onClick = viewModel::handleMenuKey)
+                FooterHint(stringResource(R.string.return_action), isFocused = focusArea == 1)
             }
-            InfoCircle(onClick = viewModel::showBanner)
+            InfoCircle(onClick = viewModel::showBanner, isFocused = focusArea == 1)
         }
     }
 }

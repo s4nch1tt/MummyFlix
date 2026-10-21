@@ -23,7 +23,7 @@ import com.mummyflix.viewmodel.MummyFlixViewModel
 @Composable
 fun FullscreenMode(viewModel: MummyFlixViewModel) {
     if (viewModel.isVideoPlaying.value && !viewModel.showNoSignal.value && !viewModel.isRadioMode.value) {
-        WatermarkOverlay()
+        MummyFlixBranding()
     }
 }
 

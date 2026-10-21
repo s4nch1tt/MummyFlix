@@ -31,6 +31,7 @@ fun SubMenuOSD(viewModel: MummyFlixViewModel) {
     val subMenu = viewModel.activeSubMenu.value ?: return
     val options = viewModel.currentSubMenuOptions()
     val subMenuIndex = viewModel.subMenuIndex.value
+    val focusArea = viewModel.focusArea.value // 0 = options list, 1 = footer (for non-game), 2 = right panel (for settings with left/right)
 
     Column(modifier = Modifier.fillMaxSize()) {
         OsdHeader(title = subMenu.title)
@@ -58,7 +59,7 @@ fun SubMenuOSD(viewModel: MummyFlixViewModel) {
                     Hint("Use the panel on the right. Press MENU or OK to return.")
                 } else {
                     options.forEachIndexed { index, option ->
-                        val active = index == subMenuIndex
+                        val active = index == subMenuIndex && focusArea == 0
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -123,30 +124,33 @@ fun SubMenuOSD(viewModel: MummyFlixViewModel) {
             }
         }
 
-        OsdFooter {
+        OsdFooter(focusArea = focusArea, isGame = subMenu == SubMenuType.GAME) {
             if (subMenu != SubMenuType.GAME) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    KeyBadge("▲", onClick = { viewModel.moveSelection(-1) })
-                    KeyBadge("▼", onClick = { viewModel.moveSelection(1) })
-                    FooterHint(stringResource(R.string.move))
+                    KeyBadge("▲", isFocused = focusArea == 1, onClick = { viewModel.moveSelection(-1) })
+                    KeyBadge("▼", isFocused = focusArea == 1, onClick = { viewModel.moveSelection(1) })
+                    FooterHint(stringResource(R.string.move), isFocused = focusArea == 1)
+                }
+                // For LANGUAGE and SYSTEM_SETTING, left/right changes values
+                if (subMenu == SubMenuType.LANGUAGE || subMenu == SubMenuType.SYSTEM_SETTING) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        KeyBadge("◄", isFocused = focusArea == 1, onClick = { viewModel.handleLeftRight(-1) })
+                        KeyBadge("►", isFocused = focusArea == 1, onClick = { viewModel.handleLeftRight(1) })
+                        FooterHint(stringResource(R.string.change), isFocused = focusArea == 1)
+                    }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    KeyBadge("◄", onClick = { viewModel.handleLeftRight(-1) })
-                    KeyBadge("►", onClick = { viewModel.handleLeftRight(1) })
-                    FooterHint(stringResource(R.string.change))
+                    KeyBadge("OK", isFocused = focusArea == 1, onClick = viewModel::handleOkKey)
+                    FooterHint(stringResource(R.string.select), isFocused = focusArea == 1)
                 }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    KeyBadge("MENU", isFocused = focusArea == 1, onClick = viewModel::handleMenuKey)
+                    FooterHint(stringResource(R.string.back), isFocused = focusArea == 1)
+                }
+                InfoCircle(onClick = viewModel::showBanner, isFocused = focusArea == 1)
             } else {
                 FooterHint("ARROWS: move snake   OK: restart")
             }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                KeyBadge("OK", onClick = viewModel::handleOkKey)
-                FooterHint(stringResource(R.string.select))
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                KeyBadge("MENU", onClick = viewModel::handleMenuKey)
-                FooterHint(stringResource(R.string.back))
-            }
-            InfoCircle(onClick = viewModel::showBanner)
         }
     }
 }

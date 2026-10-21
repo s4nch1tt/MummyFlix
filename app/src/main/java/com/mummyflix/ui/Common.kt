@@ -69,7 +69,12 @@ fun OsdHeader(title: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun OsdFooter(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+fun OsdFooter(
+    modifier: Modifier = Modifier,
+    focusArea: Int = 0,
+    isGame: Boolean = false,
+    content: @Composable RowScope.(focusArea: Int) -> Unit
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -85,16 +90,27 @@ fun OsdFooter(modifier: Modifier = Modifier, content: @Composable RowScope.() ->
             .padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
-        content = content
+        content = { content(focusArea) }
     )
 }
 
 @Composable
-fun KeyBadge(label: String, onClick: (() -> Unit)? = null) {
+fun KeyBadge(
+    label: String,
+    isFocused: Boolean = false,
+    onClick: (() -> Unit)? = null
+) {
     Box(
         modifier = Modifier
-            .background(Color.White.copy(alpha = 0.92f), RoundedCornerShape(3.dp))
-            .border(1.dp, colorResource(R.color.text_dark_blue_2), RoundedCornerShape(3.dp))
+            .background(
+                if (isFocused) colorResource(R.color.secondary) else Color.White.copy(alpha = 0.92f),
+                RoundedCornerShape(3.dp)
+            )
+            .border(
+                1.dp,
+                if (isFocused) Color.White else colorResource(R.color.text_dark_blue_2),
+                RoundedCornerShape(3.dp)
+            )
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 7.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center
@@ -103,28 +119,31 @@ fun KeyBadge(label: String, onClick: (() -> Unit)? = null) {
             text = label,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            color = colorResource(R.color.text_dark_blue)
+            color = if (isFocused) Color.Black else colorResource(R.color.text_dark_blue)
         )
     }
 }
 
 @Composable
-fun FooterHint(label: String, modifier: Modifier = Modifier) {
+fun FooterHint(label: String, isFocused: Boolean = false, modifier: Modifier = Modifier) {
     Text(
         text = label,
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
-        color = colorResource(R.color.text_dark_blue),
+        color = if (isFocused) Color.Black else colorResource(R.color.text_dark_blue),
         modifier = modifier
     )
 }
 
 @Composable
-fun InfoCircle(onClick: () -> Unit) {
+fun InfoCircle(onClick: () -> Unit, isFocused: Boolean = false) {
     Box(
         modifier = Modifier
             .size(26.dp)
-            .background(colorResource(R.color.text_dark_blue_2), CircleShape)
+            .background(
+                if (isFocused) colorResource(R.color.secondary) else colorResource(R.color.text_dark_blue_2),
+                CircleShape
+            )
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -132,7 +151,7 @@ fun InfoCircle(onClick: () -> Unit) {
             text = "i",
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold,
-            color = colorResource(R.color.border_cyan_light)
+            color = if (isFocused) Color.Black else colorResource(R.color.border_cyan_light)
         )
     }
 }
@@ -219,10 +238,30 @@ fun Hint(text: String) {
 }
 
 @Composable
-fun DevCredit() {
-    Text(
-        text = stringResource(R.string.developed_by_sanchit),
-        fontSize = 9.sp,
-        color = Color.White.copy(alpha = 0.45f)
-    )
+fun MummyFlixBranding() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
+        Column(
+            modifier = Modifier.padding(bottom = 34.dp, end = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "MUMMY",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                color = Color.White.copy(alpha = 0.9f),
+                letterSpacing = 1.5.sp
+            )
+            Text(
+                text = "FLIX",
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Black,
+                color = colorResource(R.color.watermark_orange),
+                letterSpacing = 2.5.sp,
+                modifier = Modifier
+                    .background(Color.White.copy(alpha = 0.85f), RoundedCornerShape(2.dp))
+                    .padding(horizontal = 4.dp, vertical = 1.dp)
+            )
+        }
+    }
 }

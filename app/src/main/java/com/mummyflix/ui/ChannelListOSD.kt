@@ -31,9 +31,10 @@ fun ChannelListOSD(viewModel: MummyFlixViewModel) {
     val currentIndex = viewModel.currentIndex.value
     val isRadio = viewModel.isRadioMode.value
     val listState = rememberLazyListState()
+    val focusArea = viewModel.focusArea.value // 0 = channel list, 1 = footer
 
     LaunchedEffect(currentIndex, channels.size) {
-        if (currentIndex in channels.indices) {
+        if (currentIndex in channels.indices && focusArea == 0) {
             listState.animateScrollToItem(currentIndex)
         }
     }
@@ -85,7 +86,7 @@ fun ChannelListOSD(viewModel: MummyFlixViewModel) {
                             ChannelRow(
                                 index = index,
                                 channel = channel,
-                                isActive = index == currentIndex,
+                                isActive = index == currentIndex && focusArea == 0,
                                 isPlaying = index == viewModel.playingIndex.value,
                                 onClick = { viewModel.playChannel(index) }
                             )
@@ -117,26 +118,26 @@ fun ChannelListOSD(viewModel: MummyFlixViewModel) {
             }
         }
 
-        OsdFooter {
+        OsdFooter(focusArea = focusArea) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                KeyBadge("▲")
-                KeyBadge("▼")
-                FooterHint(stringResource(R.string.move))
+                KeyBadge("▲", isFocused = focusArea == 1)
+                KeyBadge("▼", isFocused = focusArea == 1)
+                FooterHint(stringResource(R.string.move), isFocused = focusArea == 1)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                KeyBadge("◄")
-                KeyBadge("►")
-                FooterHint(stringResource(R.string.page))
+                KeyBadge("◄", isFocused = focusArea == 1)
+                KeyBadge("►", isFocused = focusArea == 1)
+                FooterHint(stringResource(R.string.page), isFocused = focusArea == 1)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                KeyBadge("OK", onClick = viewModel::handleOkKey)
-                FooterHint(stringResource(R.string.confirm))
+                KeyBadge("OK", isFocused = focusArea == 1, onClick = viewModel::handleOkKey)
+                FooterHint(stringResource(R.string.confirm), isFocused = focusArea == 1)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                KeyBadge("MENU", onClick = viewModel::handleMenuKey)
-                FooterHint(stringResource(R.string.return_action))
+                KeyBadge("MENU", isFocused = focusArea == 1, onClick = viewModel::handleMenuKey)
+                FooterHint(stringResource(R.string.return_action), isFocused = focusArea == 1)
             }
-            InfoCircle(onClick = viewModel::showBanner)
+            InfoCircle(onClick = viewModel::showBanner, isFocused = focusArea == 1)
         }
     }
 }

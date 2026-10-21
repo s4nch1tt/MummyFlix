@@ -66,6 +66,11 @@ fun VideoPlayerLayer(viewModel: MummyFlixViewModel) {
         if (viewModel.showNoSignal.value && viewState != ViewState.AUTOSCAN) {
             NoSignalOverlay(isLoading = viewModel.isLoading.value)
         }
+
+        // MummyFlix branding watermark - only show when video is playing and not in radio mode
+        if (viewModel.isVideoPlaying.value && !viewModel.showNoSignal.value && !isRadioMode && viewState != ViewState.AUTOSCAN) {
+            MummyFlixBranding()
+        }
     }
 }
 
@@ -253,14 +258,14 @@ fun NoSignalOverlay(isLoading: Boolean) {
 }
 
 @Composable
-fun WatermarkOverlay() {
+fun MummyFlixBranding() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
         Column(
             modifier = Modifier.padding(bottom = 34.dp, end = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "SR",
+                text = "MUMMY",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
@@ -268,7 +273,7 @@ fun WatermarkOverlay() {
                 letterSpacing = 1.5.sp
             )
             Text(
-                text = "PLUS",
+                text = "FLIX",
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Black,
                 color = colorResource(R.color.watermark_orange),
