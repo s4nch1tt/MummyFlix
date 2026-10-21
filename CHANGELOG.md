@@ -2,6 +2,12 @@
 
 All notable changes to MummyFlix are documented in this file. This file is generated automatically by [semantic-release](https://github.com/semantic-release/semantic-release) from [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [1.2.0](https://github.com/s4nch1tt/MummyFlix/compare/v1.1.0...v1.2.0) (2026-10-21)
+
+### Features
+
+* **ui:** match reference OSD and fix Fire TV navigation ([77c0bbf](https://github.com/s4nch1tt/MummyFlix/commit/77c0bbf6c7edadd10e2ca54815bee06da226c770))
+
 ## [1.1.0](https://github.com/s4nch1tt/MummyFlix/compare/v1.0.0...v1.1.0) (2026-10-21)
 
 ### Features
